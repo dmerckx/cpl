@@ -27,7 +27,7 @@ case class Airport3(short: String) extends Airport;
 
 case class Airport_data(city:City, name:String, short:String) extends Type;
 
-case class Dist(from:City, to:City, dist:Int) extends Type;
+case class Dist_data(from:City, to:City, dist:Int) extends Type;
 
 case class SeatType(name: String) extends Type;
 
@@ -37,14 +37,28 @@ case class AirplainType_data(name: String, arrangement:List[SeatsWithType]) exte
 
 case class AirplainType(name: String) extends Type;
 
-case class Time(from:City, to:City, typ:AirplainType, time:Int) extends Type;
+case class Time_data(from:City, to:City, typ:AirplainType, time:Int) extends Type;
 
 case class Period(from: String, to:String) extends Type;
 
+
+
 sealed abstract class Prices extends Type;
-case class Prices1(price:Int, seat:Int) extends Prices;
-case class Prices2(price:Int, seats:List[Int]) extends Prices;
-case class Prices3(price:Int, typ:SeatType) extends Prices;
+case class Prices1(price:Int, seats:List[Int]) extends Prices;
+case class Prices2(price:Int, typ:SeatType) extends Prices;
 
 case class PricePeriod(period: Period, prices: Prices) extends Type;
-    
+
+sealed abstract class Flight extends Type;
+case class Flight1(template:Template, period:Period);
+case class Flight2(fln:String);
+
+
+sealed abstract class BookingSlots extends Type;
+case class BookingSlot1(price:Int, templates:List[Template], seat:List[Int], periods: List[Period]) extends BookingSlots;
+case class BookingSlot2(price:Int, templates:List[Template], types:List[SeatType], periods: List[Period]) extends BookingSlots;
+case class BookingSlot3(price:Int, flight:Flight, seat:Int);
+case class BookingSlot4(price:Int, flight:Flight, typ:SeatType);
+
+sealed abstract class BookingSlotsUpdate extends Type;
+case class BookingSlotsUpdate1(price:Int) extends BookingSlotsUpdate;
