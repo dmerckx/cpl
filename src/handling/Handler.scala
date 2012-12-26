@@ -34,7 +34,7 @@ object Handler {
 		case ChangeCityName(city, to) => changeCityNameSuper(city, to)
 		case ChangeCityCode(city, to:String) => changeCityCodeSuper(city, to)
 		case RemoveCity(city) => removeCitySuper(city)
-		
+
 		case AddAirport(data) => addAirport(data)
 		//...
 		case ChangeTemplatePricesTo(templ, to) => changeTemplatePricesTo(templ, to)
@@ -84,8 +84,8 @@ object Handler {
 	}
 
 	def changeCityName(city: City1, to: String) = {
-		if (!evalGet(select("*", "CITY", "name=" + city.name)))
-			throw new NoSuchCityException(city.name);
+		if (!cityExists(city))
+			throw new NoSuchCityException(city);
 
 		if (evalGet(select("*", "CITY", "name=" + to)))
 			throw new NotAllowedCityNameException(to);
@@ -94,8 +94,8 @@ object Handler {
 	}
 
 	def changeCityName(city: City2, to: String) = {
-		if (!evalGet(select("*", "CITY", "idCity=" + city.short)))
-			throw new NoSuchCityException(city.short);
+		if (!cityExists(city))
+			throw new NoSuchCityException(city);
 
 		if (evalGet(select("*", "CITY", "name=" + to)))
 			throw new NotAllowedCityNameException(city.short);
@@ -104,8 +104,8 @@ object Handler {
 	}
 
 	def changeCityName(city: City3, to: String) = {
-		if (!evalGet(select("*", "CITY", "idCity=" + city.short + " AND " + "name=" + city.name)))
-			throw new NoSuchCityException(city.short);
+		if (!cityExists(city))
+			throw new NoSuchCityException(city);
 
 		if (evalGet(select("*", "CITY", "name=" + to)))
 			throw new NotAllowedCityNameException(city.short);
@@ -122,8 +122,8 @@ object Handler {
 	}
 
 	def changeCityCode(city:City1, to:String) {
-		if (!evalGet(select("*", "CITY", "name=" + city.name)))
-			throw new NoSuchCityException(city.name);
+		if (!cityExists(city))
+			throw new NoSuchCityException(city);
 
 		if (evalGet(select("*", "CITY", "idCity=" + to)))
 			throw new NotAllowedCityCodeException(to);
@@ -132,8 +132,8 @@ object Handler {
 	}
 
 	def changeCityCode(city:City2, to:String) {
-		if (!evalGet(select("*", "CITY", "idCity=" + city.short)))
-			throw new NoSuchCityException(city.short);
+		if (!cityExists(city))
+			throw new NoSuchCityException(city);
 
 		if (evalGet(select("*", "CITY", "idCity=" + to)))
 			throw new NotAllowedCityCodeException(to);
@@ -142,8 +142,8 @@ object Handler {
 	}
 
 	def changeCityCode(city:City3, to:String) {
-		if (!evalGet(select("*", "CITY", "idCity=" + city.short + " AND " + "name=" + city.name)))
-			throw new NoSuchCityException(city.short);
+		if (!cityExists(city))
+			throw new NoSuchCityException(city);
 
 		if (evalGet(select("*", "CITY", "idCity=" + to)))
 			throw new NotAllowedCityCodeException(to);
@@ -161,37 +161,57 @@ object Handler {
 	}
 
 	def removeCity(city:City1) {
-		if (!evalGet(select("*", "CITY", "name=" + city.name)))
-			throw new NoSuchCityException(city.name);
+		if (!cityExists(city))
+			throw new NoSuchCityException(city);
 
 		executeQuery(delete("CITY", "name=" + city.name));
 	}
 
 	def removeCity(city:City2) {
-		if (!evalGet(select("*", "CITY", "idCity=" + city.short)))
-			throw new NoSuchCityException(city.short);
+		if (!cityExists(city))
+			throw new NoSuchCityException(city);
 
 		executeQuery(delete("CITY", "idCity=" + city.short));
 	}
 
 	def removeCity(city:City3) {
-		if (!evalGet(select("*", "CITY", "idCity=" + city.short + " AND " + "name=" + city.name)))
-			throw new NoSuchCityException(city.short);
+		if (!cityExists(city))
+			throw new NoSuchCityException(city);
 
 		executeQuery(delete("CITY", "name=" + city.name + " AND " + "idCity=" + city.short));
 	}
 
-	// ----- End Cities ------ //
+	def cityExistsSuper(city:City) : Boolean = {
+	   city match {
+	     case city:City1 => return cityExists(city);
+	     case city:City2 => return cityExists(city);
+	     case city:City3 => return cityExists(city);
+	  }
+	}
 	
+	def cityExists(city:City1) : Boolean = {
+			return evalGet(select("*", "CITY", "name=" + city.name));
+	}
+
+	def cityExists(city:City2) : Boolean = {
+			return evalGet(select("*", "CITY", "idCity=" + city.short));
+	}
+
+	def cityExists(city:City3) : Boolean = {
+			return evalGet(select("*", "CITY", "idCity=" + city.short + " AND " + "name=" + city.name));
+	}
+
+	// ----- End Cities ------ //
+
 	// ----- Begin Airports ------ //
 
 	def addAirport(data: Airport_data) = {
-		//Do query and shizzle
-		println("data: " + data);
+		if(!cityExistsSuper(data.city))
+			throw new NoSuchCityException(data.city);
 	}
 
 	// ----- End Airports ------ //
-	
+
 	def changeTemplatePricesTo(templ: Template, to: List[PricePeriod]) = {
 		//Check template..
 		checkTemplate(templ);

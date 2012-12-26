@@ -25,7 +25,10 @@ sealed abstract class Airport extends Type;
 case class Airport1(name:String) extends Airport;
 case class Airport2(city:City) extends Airport;
 case class Airport3(short:String) extends Airport;
-case class Airport_data(city:City, name:String, short:String) extends Type;
+case class Airport_data(
+    city:City, 
+    name:String, 
+    short:String) extends Type;
 
 /**
  * Types for selecting and adding templates.
