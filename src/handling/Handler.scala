@@ -12,7 +12,6 @@ import syntax.AddCity
 import syntax.City_data
 import syntax.City1
 import syntax.City2
-import syntax.City3
 import syntax.City
 import syntax.Operation
 import syntax.ChangeTemplatePricesTo
@@ -33,6 +32,10 @@ import handling.exceptions.AlreadyExistingAirportName
 import handling.exceptions.NoSuchAirportName
 import syntax.Airport
 import syntax.Template
+import handling.exceptions.NoSuchAirportCity
+import handling.exceptions.NoSuchAirportCode
+import handling.exceptions.NotAllowedAirportName
+import handling.exceptions.NotAllowedAirportCode
 
 case class TemplateException(templ:Template, msg:String) extends Exception;
 
@@ -93,7 +96,6 @@ object Handler {
 		city match {
 		case city:City1 => changeCityName(city, to)
 		case city:City2 => changeCityName(city, to)
-		case city:City3 => changeCityName(city, to)
 		}
 	}
 
@@ -117,21 +119,10 @@ object Handler {
 		executeQuery(update("CITY", "name=" + to, "idCity=" + city.short));
 	}
 
-	def changeCityName(city: City3, to: String) = {
-		if (!cityExists(city))
-			throw new NoSuchCityException(city);
-
-		if (evalGet(select("*", "CITY", "name=" + to)))
-			throw new NotAllowedCityNameException(city.short);
-
-		executeQuery(update("CITY", "name=" + to, "idCity=" + city.short  + " AND " + "name=" + city.name));
-	}
-
 	def changeCityCodeSuper(city:City, to:String) {
 		city match {
 		case city:City1 => changeCityCode(city, to)
 		case city:City2 => changeCityCode(city, to)
-		case city:City3 => changeCityCode(city, to)
 		}
 	}
 
@@ -155,22 +146,11 @@ object Handler {
 		executeQuery(update("CITY", "idCity=" + to, "idCity=" + city.short));
 	}
 
-	def changeCityCode(city:City3, to:String) {
-		if (!cityExists(city))
-			throw new NoSuchCityException(city);
-
-		if (evalGet(select("*", "CITY", "idCity=" + to)))
-			throw new NotAllowedCityCodeException(to);
-
-		executeQuery(update("CITY", "idCity=" + to, "idCity=" + city.short + " AND " + "name=" + city.name));
-	}
-
 	//TODO naam veranderen
 	def removeCitySuper(city:City) {
 		city match {
-		case city:City1 => removeCity(city)
-		case city:City2 => removeCity(city)
-		case city:City3 => removeCity(city)
+			case city:City1 => removeCity(city)
+			case city:City2 => removeCity(city)
 		}
 	}
 
@@ -188,18 +168,10 @@ object Handler {
 		executeQuery(delete("CITY", "idCity=" + city.short));
 	}
 
-	def removeCity(city:City3) {
-		if (!cityExists(city))
-			throw new NoSuchCityException(city);
-
-		executeQuery(delete("CITY", "name=" + city.name + " AND " + "idCity=" + city.short));
-	}
-
 	def cityExistsSuper(city:City) : Boolean = {
 			city match {
 			case city:City1 => return cityExists(city);
 			case city:City2 => return cityExists(city);
-			case city:City3 => return cityExists(city);
 			}
 	}
 
@@ -209,10 +181,6 @@ object Handler {
 
 	def cityExists(city:City2) : Boolean = {
 			return evalGet(select("*", "CITY", "idCity=" + city.short));
-	}
-
-	def cityExists(city:City3) : Boolean = {
-			return evalGet(select("*", "CITY", "idCity=" + city.short + " AND " + "name=" + city.name));
 	}
 
 	// ----- End Cities ------ //
@@ -230,28 +198,72 @@ object Handler {
 		//If all checks are ok, add this airport to the database 
 		val query = insert("AIRPORT", makeValues(List(data.short, data.city, data.name)));
 		executeQuery(query);
-		println("Add aiport with query: " + query);
+		println("Add airport with query: " + query);
 	}
 
 	def changeAirportNameSuper(airport:Airport, toName:String) = {
+	  if(evalGet(select("*","AIRPORT", "name=" + toName)))
+			throw new NotAllowedAirportName(toName);
 		airport match {
 		case airport:Airport1 => changeAirportName(airport,toName)
 		case airport:Airport2 => changeAirportName(airport,toName)
 		case airport:Airport3 => changeAirportName(airport,toName)
 		}
 	}
-	
+
+	def changeAirportName(airport:Airport1, toName:String) = {
+		if(!evalGet(select("*","AIRPORT","name=" + airport.name)))
+			throw new NoSuchAirportName(airport.name);
+		//TODO optional
+		executeQuery(update("AIRPORT","name= " + toName,"name=" + airport.name))
+	}
+
+	def changeAirportName(airport:Airport2, toName:String) = {
+		if(!evalGet(select("*","AIRPORT","city=" + airport.city)))
+			throw new NoSuchAirportCity(airport.city);
+		//TODO optional
+		executeQuery(update("AIRPORT","name= " + toName,"city=" + airport.city))
+	}
+
+	def changeAirportName(airport:Airport3, toName:String) = {
+		if(!evalGet(select("*","AIRPORT","code=" + airport.short)))
+			throw new NoSuchAirportCode(airport.short);
+		//TODO optional
+		executeQuery(update("AIRPORT","name= " + toName,"code=" + airport.short))
+	}
+
 	def changeAirportShortSuper(airport:Airport, toShort:String) = {
-	  //TODO
+	   if(evalGet(select("*","AIRPORT", "code=" + toShort)))
+			throw new NotAllowedAirportCode(toShort);
 		airport match {
-		case airport:Airport1 => changeAirportName(airport,toShort)
-		case airport:Airport2 => changeAirportName(airport,toShort)
-		case airport:Airport3 => changeAirportName(airport,toShort)
+		case airport:Airport1 => changeAirportShort(airport,toShort)
+		case airport:Airport2 => changeAirportShort(airport,toShort)
+		case airport:Airport3 => changeAirportShort(airport,toShort)
 		}
 	}
-	
+
+	def changeAirportShort(airport:Airport1, toShort:String) = {
+		if(!evalGet(select("*","AIRPORT","name=" + airport.name)))
+			throw new NoSuchAirportName(airport.name);
+		//TODO optional
+		executeQuery(update("AIRPORT","code= " + toShort,"name=" + airport.name))
+	}
+
+	def changeAirportShort(airport:Airport2, toShort:String) = {
+		if(!evalGet(select("*","AIRPORT","city=" + airport.city)))
+			throw new NoSuchAirportCity(airport.city);
+		//TODO optional
+		executeQuery(update("AIRPORT","code= " + toShort,"city=" + airport.city))
+	}
+
+	def changeAirportShort(airport:Airport3, toShort:String) = {
+		if(!evalGet(select("*","AIRPORT","code=" + airport.short)))
+			throw new NoSuchAirportCode(airport.short);
+		//TODO optional
+		executeQuery(update("AIRPORT","code= " + toShort,"code=" + airport.short))
+	}
+
 	def changeAirportCitySuper(airport:Airport, city:City) = {
-	  //TODO
 		airport match {
 		case airport:Airport1 => changeAirportCity(airport,city)
 		case airport:Airport2 => changeAirportCity(airport,city)
@@ -259,35 +271,40 @@ object Handler {
 		}
 	}
 
-	def changeAirportCity(airport:Airport, city:City) =  {
-	  
-	}
-	
-	def changeAirportName(airport:Airport1, toName:String) = {
+	def changeAirportCity(airport:Airport1, toCity:City) =  {
 		if(!evalGet(select("*","AIRPORT","name=" + airport.name)))
 			throw new NoSuchAirportName(airport.name);
-//		if(evalGet(select("*","AIRPORT", "code=" + data.short)))
-//			throw new AlreadyExistingAirportCode(data.short);
+		//TODO optional
+		executeQuery(update("AIRPORT","city= " + toCity,"name=" + airport.name))
 	}
 
-	def changeAirportName(airport:Airport2, toName:String) = {
-
+	def changeAirportCity(airport:Airport2, toCity:City) =  {
+		if(!evalGet(select("*","AIRPORT","city=" + airport.city)))
+			throw new NoSuchAirportCity(airport.city);
+		//TODO optional
+		executeQuery(update("AIRPORT","city= " + toCity,"city=" + airport.city))
 	}
 
-	def changeAirportName(airport:Airport3, toName:String) = {
-
+	def changeAirportCity(airport:Airport3, toCity:City) =  {
+		if(!evalGet(select("*","AIRPORT","code=" + airport.short)))
+			throw new NoSuchAirportCode(airport.short);
+		//TODO optional
+		executeQuery(update("AIRPORT","city= " + toCity,"code=" + airport.short))
 	}
 
 	def airportExists(airport:Airport1) : Boolean = {
 		return evalGet(select("*","AIRPORT","name=" + airport.name));
+		//TODO optional
 	}
 
 	def airportExists(airport:Airport2) : Boolean = {
 		return evalGet(select("*","AIRPORT","city=" + airport.city));
+		//TODO optional
 	}
 
 	def airportExists(airport:Airport3) : Boolean = {
 		return evalGet(select("*","AIRPORT","code=" + airport.short));
+		//TODO optional
 	}
 
 	// ----- End Airports ------ //

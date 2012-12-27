@@ -17,9 +17,8 @@ case class Filled[T](t:T) extends Opt[T]
  * Types for selecting and adding cities.
  */
 sealed abstract class City extends Type;
-case class City1(name:String) extends City;
-case class City2(short:String) extends City;
-case class City3(name:String, short:String) extends City;
+case class City1(name:String, short:Opt[String]) extends City;
+case class City2(name:Opt[String], short:String) extends City;
 case class City_data(name:String, short:String) extends Type;
 
 /**
