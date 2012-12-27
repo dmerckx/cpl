@@ -22,9 +22,9 @@ case class City_data(name:String, short:String) extends Type;
  * Types for selecting and adding airports.
  */
 sealed abstract class Airport extends Type;
-case class Airport1(name:String) extends Airport;
-case class Airport2(city:City) extends Airport;
-case class Airport3(short:String) extends Airport;
+case class Airport1(name:String, city: Opt[City], short: Opt[String]) extends Airport;
+case class Airport2(name: Opt[String], city:City, short: Opt[String]) extends Airport;
+case class Airport3(name: Opt[String], city: Opt[City], short:String) extends Airport;
 case class Airport_data(
     city:City, 
     name:String, 

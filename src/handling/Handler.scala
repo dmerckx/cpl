@@ -1,8 +1,14 @@
 package handling
 
 import syntax.AddAirport
-import syntax.AddCity
+import syntax.Airport1
+import syntax.Airport2
+import syntax.Airport3
 import syntax.Airport_data
+import syntax.ChangeAirportCity
+import syntax.ChangeAirportName
+import syntax.ChangeAirportShort
+import syntax.AddCity
 import syntax.City_data
 import syntax.City1
 import syntax.City2
@@ -12,7 +18,6 @@ import syntax.Operation
 import syntax.ChangeTemplatePricesTo
 import syntax.ChangeCityName
 import syntax.ChangeCityCode
-import syntax.Template
 import syntax.PricePeriod
 import syntax.RemoveCity
 import handling.exceptions.IllegalCityNameException
@@ -23,8 +28,13 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.ForEach
 import handling.exceptions.AlreadyExistingCityShortException
 import handling.exceptions.NotAllowedCityNameException
 import handling.exceptions.NotAllowedCityCodeException
+import handling.exceptions.AlreadyExistingAirportCode
+import handling.exceptions.AlreadyExistingAirportName
+import handling.exceptions.NoSuchAirportName
+import syntax.Airport
+import syntax.Template
 
-case class TemplateException(templ: Template, msg: String) extends Exception;
+case class TemplateException(templ:Template, msg:String) extends Exception;
 
 object Handler {
 
@@ -36,6 +46,10 @@ object Handler {
 		case RemoveCity(city) => removeCitySuper(city)
 
 		case AddAirport(data) => addAirport(data)
+		case ChangeAirportName(airport, toName) => changeAirportNameSuper(airport, toName)
+		case ChangeAirportShort(airport, toShort) => changeAirportShortSuper(airport, toShort)
+		case ChangeAirportCity(airport, toCity) => changeAirportCitySuper(airport, toCity)
+		//		case ChangeAirportName(name, to) => changeAirportName(name, to)
 		//...
 		case ChangeTemplatePricesTo(templ, to) => changeTemplatePricesTo(templ, to)
 		}
@@ -182,13 +196,13 @@ object Handler {
 	}
 
 	def cityExistsSuper(city:City) : Boolean = {
-	   city match {
-	     case city:City1 => return cityExists(city);
-	     case city:City2 => return cityExists(city);
-	     case city:City3 => return cityExists(city);
-	  }
+			city match {
+			case city:City1 => return cityExists(city);
+			case city:City2 => return cityExists(city);
+			case city:City3 => return cityExists(city);
+			}
 	}
-	
+
 	def cityExists(city:City1) : Boolean = {
 			return evalGet(select("*", "CITY", "name=" + city.name));
 	}
@@ -208,6 +222,72 @@ object Handler {
 	def addAirport(data: Airport_data) = {
 		if(!cityExistsSuper(data.city))
 			throw new NoSuchCityException(data.city);
+		if(evalGet(select("*","AIRPORT","name=" + data.name)))
+			throw new AlreadyExistingAirportName(data.name);
+		if(evalGet(select("*","AIRPORT", "code=" + data.short)))
+			throw new AlreadyExistingAirportCode(data.short);
+
+		//If all checks are ok, add this airport to the database 
+		val query = insert("AIRPORT", makeValues(List(data.short, data.city, data.name)));
+		executeQuery(query);
+		println("Add aiport with query: " + query);
+	}
+
+	def changeAirportNameSuper(airport:Airport, toName:String) = {
+		airport match {
+		case airport:Airport1 => changeAirportName(airport,toName)
+		case airport:Airport2 => changeAirportName(airport,toName)
+		case airport:Airport3 => changeAirportName(airport,toName)
+		}
+	}
+	
+	def changeAirportShortSuper(airport:Airport, toShort:String) = {
+	  //TODO
+		airport match {
+		case airport:Airport1 => changeAirportName(airport,toShort)
+		case airport:Airport2 => changeAirportName(airport,toShort)
+		case airport:Airport3 => changeAirportName(airport,toShort)
+		}
+	}
+	
+	def changeAirportCitySuper(airport:Airport, city:City) = {
+	  //TODO
+		airport match {
+		case airport:Airport1 => changeAirportCity(airport,city)
+		case airport:Airport2 => changeAirportCity(airport,city)
+		case airport:Airport3 => changeAirportCity(airport,city)
+		}
+	}
+
+	def changeAirportCity(airport:Airport, city:City) =  {
+	  
+	}
+	
+	def changeAirportName(airport:Airport1, toName:String) = {
+		if(!evalGet(select("*","AIRPORT","name=" + airport.name)))
+			throw new NoSuchAirportName(airport.name);
+//		if(evalGet(select("*","AIRPORT", "code=" + data.short)))
+//			throw new AlreadyExistingAirportCode(data.short);
+	}
+
+	def changeAirportName(airport:Airport2, toName:String) = {
+
+	}
+
+	def changeAirportName(airport:Airport3, toName:String) = {
+
+	}
+
+	def airportExists(airport:Airport1) : Boolean = {
+		return evalGet(select("*","AIRPORT","name=" + airport.name));
+	}
+
+	def airportExists(airport:Airport2) : Boolean = {
+		return evalGet(select("*","AIRPORT","city=" + airport.city));
+	}
+
+	def airportExists(airport:Airport3) : Boolean = {
+		return evalGet(select("*","AIRPORT","code=" + airport.short));
 	}
 
 	// ----- End Airports ------ //
