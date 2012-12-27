@@ -3,7 +3,11 @@ package syntax
 /**
  * The base type for all types
  */
-sealed abstract class Type;
+sealed abstract class Type
+
+sealed abstract class Opt[T] extends Type
+case class Empty[T] extends Opt[T]
+case class Filled[T](t:T) extends Opt[T]
 
 /**
  * Implementation Kristof below
