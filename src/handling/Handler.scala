@@ -2,8 +2,8 @@ package handling
 
 import syntax.AddAirport
 import syntax.AddCity
-import syntax.Airport_data
-import syntax.City_data
+import syntax.AirportData
+import syntax.CityData
 import syntax.Operation
 import syntax.ChangeTemplatePricesTo
 import syntax.Template
@@ -25,7 +25,7 @@ object Handler {
   
   // ----- OPERATIONS ----- //
   
-  def addCity(data:City_data) = {
+  def addCity(data:CityData) = {
 	  //Check if the name of this city etc is correct (only a-zA-Z), if not throw error
 	  	
 	  //If all checks are ok, add this city to the database 
@@ -33,7 +33,7 @@ object Handler {
 	  println("Add city with query: " + query);
   }
   
-  def addAirport(data:Airport_data) = {
+  def addAirport(data:AirportData) = {
 	  //Do query and shizzle
 	  println("data: " + data);
   }

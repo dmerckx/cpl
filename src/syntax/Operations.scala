@@ -6,9 +6,9 @@ package syntax
  */
 sealed abstract class Operation
 
-case class AddCity(data:City_data) extends Operation
+case class AddCity(data:CityData) extends Operation
 
-case class AddAirport(data:Airport_data) extends Operation
+case class AddAirport(data:AirportData) extends Operation
 
 case class AddDist(data:Dist) extends Operation
 

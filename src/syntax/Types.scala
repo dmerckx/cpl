@@ -5,8 +5,17 @@ package syntax
  */
 sealed abstract class Type;
 
+sealed abstract class Opt[T] extends Type
+case class Empty[T] extends Opt[T]
+case class Filled[T](t:T) extends Opt[T]
+
+
+case class IntType extends Type;
+
+case class Test(city: City) extends Type
+
 sealed abstract class City extends Type;
-case class City1(name: String) extends City;
+case class City1(name: Opt[String]) extends City;
 case class City2(short: String) extends City;
 
 case class Template(flightnr: String) extends Type;
@@ -18,14 +27,14 @@ case class Template_data(
 	periods: PricePeriod,
 	reccPeriod: String) extends Type;
 
-case class City_data(name: String, short: String) extends Type;
+case class CityData(name: String, short: String) extends Type;
 
 sealed abstract class Airport extends Type;
 case class Airport1(name: String) extends Airport;
 case class Airport2(city: City) extends Airport;
 case class Airport3(short: String) extends Airport;
 
-case class Airport_data(city:City, name:String, short:String) extends Type;
+case class AirportData(city:City, name:String, short:String) extends Type;
 
 case class Dist(from:City, to:City, dist:Int) extends Type;
 
