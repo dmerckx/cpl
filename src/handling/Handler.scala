@@ -37,6 +37,10 @@ import handling.exceptions.NoSuchAirportCity
 import handling.exceptions.NoSuchAirportCode
 import handling.exceptions.NotAllowedAirportName
 import handling.exceptions.NotAllowedAirportCode
+import scala.slick.session.Database
+import Database.threadLocalSession
+import scala.slick.jdbc.{GetResult, StaticQuery => Q}
+import Q.interpolation
 
 case class TemplateException(templ:Template, msg:String) extends Exception;
 
@@ -150,8 +154,8 @@ object Handler {
 	//TODO naam veranderen
 	def removeCitySuper(city:City) {
 		city match {
-			case city:City1 => removeCity(city)
-			case city:City2 => removeCity(city)
+		case city:City1 => removeCity(city)
+		case city:City2 => removeCity(city)
 		}
 	}
 
@@ -203,7 +207,7 @@ object Handler {
 	}
 
 	def changeAirportNameSuper(airport:Airport, toName:String) = {
-	  if(evalGet(select("*","AIRPORT", "name=" + toName)))
+		if(evalGet(select("*","AIRPORT", "name=" + toName)))
 			throw new NotAllowedAirportName(toName);
 		airport match {
 		case airport:Airport1 => changeAirportName(airport,toName)
@@ -234,7 +238,7 @@ object Handler {
 	}
 
 	def changeAirportShortSuper(airport:Airport, toShort:String) = {
-	   if(evalGet(select("*","AIRPORT", "code=" + toShort)))
+		if(evalGet(select("*","AIRPORT", "code=" + toShort)))
 			throw new NotAllowedAirportCode(toShort);
 		airport match {
 		case airport:Airport1 => changeAirportShort(airport,toShort)
@@ -335,6 +339,10 @@ object Handler {
 
 	def executeQuery(query: String) = {
 		//evaluta the query but don't return any result
+		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
+			(Q.u + "insert into city(name) values('Brussels')").execute
+		}
 		println("query: " + query);
 	}
 
