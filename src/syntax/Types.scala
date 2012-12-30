@@ -17,8 +17,8 @@ case class Filled[T](t:T) extends Opt[T]
  * Types for selecting and adding cities.
  */
 sealed abstract class City extends Type;
-case class City1(name:String, short:Opt[String]) extends City;
-case class City2(name:Opt[String], short:String) extends City;
+case class City1(name:String, short:Opt[String]) extends City
+case class City2(short:String) extends City //City2 met optionele name is onmogelijk == zal altijd empty zijn dus loos
 case class City_data(name:String, short:String) extends Type;
 
 /**
@@ -26,12 +26,12 @@ case class City_data(name:String, short:String) extends Type;
  */
 sealed abstract class Airport extends Type;
 case class Airport1(name:String, city: Opt[City], short: Opt[String]) extends Airport;
-case class Airport2(name: Opt[String], city:City, short: Opt[String]) extends Airport;
-case class Airport3(name: Opt[String], city: Opt[City], short:String) extends Airport;
+case class Airport2(city:City, short: Opt[String]) extends Airport;	//idem opmerking hierboven
+case class Airport3(short:String) extends Airport;					//idem
 case class Airport_data(
     city:City, 
     name:String, 
-    short:String) extends Type;
+    short:String) extends Type
 
 /**
  * Types for selecting and adding templates.

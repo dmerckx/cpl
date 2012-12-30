@@ -7,5 +7,7 @@
 	<classpathentry kind="lib" path="jars/slick_2.10-1.0.0-RC1.jar"/>
 	<classpathentry kind="lib" path="jars/slf4j-api-1.7.2.jar"/>
 	<classpathentry kind="lib" path="jars/slf4j-simple-1.7.2.jar"/>
+	<classpathentry kind="lib" path="scalatest-1.6.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

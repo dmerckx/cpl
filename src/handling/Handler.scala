@@ -339,10 +339,10 @@ object Handler {
 
 	def executeQuery(query: String) = {
 		//evaluta the query but don't return any result
-		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+		/*Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
 				driver = "com.mysql.jdbc.Driver") withSession {
 			(Q.u + "insert into city(name) values('Brussels')").execute
-		}
+		}*/
 		println("query: " + query);
 	}
 

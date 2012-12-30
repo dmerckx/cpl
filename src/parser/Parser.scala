@@ -16,6 +16,10 @@ import syntax.AddAirport
 import syntax.Airport_data
 import syntax.City_data
 
+sealed abstract class ParseRes;
+case class PSucces(op:Operation) extends ParseRes;
+case class PFail(msg:String) extends ParseRes;
+
 case class UnknownAttribute(name:String) extends Exception
 case class SkippedAttribute(name:String) extends Exception
 
@@ -39,7 +43,7 @@ object Parser extends StandardTokenParsers {
     if(map.contains(key))
       map.get(key).get match {case t:T => t}
     else
-      throw new SkippedAttribute(key)
+      throw new MatchError("hoi")
   }
     
   def selectOpt[T](key:String, map:Map[String,Any]):Opt[T] = {
@@ -51,17 +55,13 @@ object Parser extends StandardTokenParsers {
   }
   
   val parseCity: Parser[City] =
-    "{" ~> parseAtts(city1) <~ "}" ^^ {atts =>
-    	new City1(select("name",atts))} |
-    "{" ~> parseAtts(city2) <~ "}" ^^ {atts =>
-    	new City2(select("short",atts))}
-  val city1:Parser[(String,Any)] = {
-    ident ~ ":" ~ ident ^? {	//^? here: if this fails we can backtrack to try city2
-     case "name"~":"~name => ("name", name)}}
-  val city2:Parser[(String,Any)] = {
-    ident ~ ":" ~ ident ^^ {	//^^ here: if this fails the statement was simply incorrect
-     case "short"~":"~short => ("short", short)
-     case attName~":"~_ => throw new UnknownAttribute(attName)}}
+    "{" ~> parseAtts(city) <~ "}" ^^ {atts =>
+      if(!atts.contains("name")) City2(select("short",atts))
+      else City1(select("name",atts), selectOpt("short",atts))}
+  val city:Parser[(String,Any)] = {
+    ident ~ ":" ~ ident ^? {
+     case "name"~":"~name => ("name", name)
+     case "short"~":"~short => ("short", short)}}
   
   val parseCityData: Parser[City_data] ={
     "{" ~> parseAtts(cityData) <~ "}" ^^ {atts =>
@@ -85,11 +85,26 @@ object Parser extends StandardTokenParsers {
      case "city"~":"~city => ("city", city)
      case name~":"~_ => throw new UnknownAttribute(name)} 
   
-  def parse (s: String) = {
+  /*def parse (s: String) = {
     val tokens = new lexical.Scanner(s)
     printTokens(tokens);
     println(phrase(parseOp));
     phrase(parseOp)(tokens)
+  }*/
+  
+  def parse (s: String):ParseRes = {
+    val tokens = new lexical.Scanner(s)
+    try{
+	    phrase(parseOp)(tokens) match {
+	     	case Success(op, _) => PSucces(op)
+	     	case Failure(msg, n) => PFail(msg)
+	     	case Error(msg, _) => PFail(msg)
+	    }
+    }
+    catch {
+       case UnknownAttribute(n) => PFail("unknown attribute: " + n)
+       case SkippedAttribute(n) => PFail("skipped attribute: " + n)
+    }
   }
   
   def printTokens(sc: lexical.Scanner):Unit = {
@@ -99,7 +114,7 @@ object Parser extends StandardTokenParsers {
     }
   }
   
-  def test (exprString : String) = {
+  /*def test (exprString : String) = {
      try{
        parse (exprString) match {
          case Success(op, _) => println("Operation: " + op)
@@ -114,10 +129,15 @@ object Parser extends StandardTokenParsers {
        case UnknownAttribute(n) => println("Unkown attribute used:" + n);
        case SkippedAttribute(n) => println("Attribute was not provided:" + n)
      }
-  }
+  }*/
 
   def main (args: Array[String]) = {
-     test ("ADD AIRPORT {name:BRUSSELS, city:{short:deef}, short:BRU}")
+    val x = 5
+    x match {
+      case 2 => 
+    }
+    println("hello"); 
+    //test ("ADD AIRPORT {name:BRUSSELS, city:{short:deef}, short:BRU}")
   }   
 }
   
