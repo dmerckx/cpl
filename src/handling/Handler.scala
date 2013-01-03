@@ -32,7 +32,6 @@ import handling.exceptions.AlreadyExistingAirportCode
 import handling.exceptions.AlreadyExistingAirportName
 import handling.exceptions.NoSuchAirportName
 import syntax.Airport
-import syntax.Template
 import handling.exceptions.NoSuchAirportCity
 import handling.exceptions.NoSuchAirportCode
 import handling.exceptions.NotAllowedAirportName
@@ -42,6 +41,7 @@ import Database.threadLocalSession
 import scala.slick.jdbc.{GetResult, StaticQuery => Q}
 import Q.interpolation
 import scala.slick.session.Session
+import syntax.Template
 
 case class TemplateException(templ:Template, msg:String) extends Exception;
 
@@ -316,7 +316,7 @@ object Handler {
 
 	// ----- End Airports ------ //
 
-	def changeTemplatePricesTo(templ: Template, to: List[PricePeriod]) = {
+	def changeTemplatePricesTo(templ:Template, to: List[PricePeriod]) = {
 		//Check template..
 		checkTemplate(templ);
 
@@ -325,11 +325,11 @@ object Handler {
 
 	// ------ CHECKS ----- //
 
-	def checkTemplate(templ: Template) = {
+	def checkTemplate(templ:Template) = {
 		//Check database to see if this template corresponds to a correct template
-		val query = "SELECT * FROM Templates WHERE flightnr=\"" + templ.flightnr + "\"";
-		println("Check template with query: " + query);
-
+//		val query = "SELECT * FROM Templates WHERE flightnr=\"" + templ.flightnr + "\"";
+//		println("Check template with query: " + query);
+//TODO aanpassen aan nieuwe template.
 		//If no such flightnr can be found..
 		throw new TemplateException(templ, "No template with such flightnr excists");
 	}

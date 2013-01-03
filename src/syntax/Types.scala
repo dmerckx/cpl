@@ -36,7 +36,9 @@ case class Airport_data(
 /**
  * Types for selecting and adding templates.
  */
-case class Template(flightnr:String) extends Type;
+sealed abstract class Template extends Type;
+case class Template1(flightnr:String, from: Opt[City], to: Opt[City]) extends Template;
+case class Template2(from: City, to: City) extends Template;
 case class Template_data(
     flightnr:String,
 	from:City,
@@ -48,8 +50,9 @@ case class Template_data(
 /**
  * Types for selecting and adding distances.
  */
-case class Dist_data(from:City, to:City, dist:Int) extends Type;
 case class Dist(from:City, to:City) extends Type;
+case class Dist_data(from:City, to:City, dist:Int) extends Type;
+
 /**
  * Types for selecting and adding seattypes.
  */
@@ -67,14 +70,12 @@ case class AirplaneType_data(name:String, arrangement:List[SeatsWithType]) exten
 /**
  * Types for selecting and adding flight times.
  */
+case class FlightTime(from:City, to:City, airplaneType: Opt[AirplaneType]) extends Type;
 case class FlightTime_data(
     from:City, 
     to:City, 
     airplaneType:AirplaneType, 
     time:Int) extends Type;
-sealed abstract class FlightTime 
-case class FlightTime1(from:City, to:City) extends FlightTime;
-case class FlightTime2(from:City, to:City, airplaneType:AirplaneType) extends FlightTime;
 
 /**
  * Types for selecting periods.
@@ -87,17 +88,35 @@ case class Period(from:String, to:String) extends Type;
 sealed abstract class Prices extends Type;
 case class Prices1(price:Int, seats:List[Int]) extends Prices;
 case class Prices2(price:Int, typ:SeatType) extends Prices;
+
 case class PricePeriod(period:Period, prices:Prices) extends Type;
 
 /**
  * Types for selecting and adding airline companies.
  */
 sealed abstract class AirlineCompany extends Type;
-case class AirlineCompany1(name:String) extends AirlineCompany;
+case class AirlineCompany1(name:String, short: Opt[String]) extends AirlineCompany;
 case class AirlineCompany2(short:String) extends AirlineCompany;
 case class AirlineCompany_data(name:String, short:String) extends Type;
 
+/**
+ * Types for selecting and adding flights.
+ */
+sealed abstract class Flight extends Type;
+case class Flight1(template:Template, period:Period) extends Flight;
+case class Flight2(fln:String, from: Opt[City], to: Opt[City]) extends Flight;
+case class Flight3(from: City, to: City) extends Flight;
+sealed abstract class Flight_data extends Type;
+case class Flight_data1(
+    template:Template) extends Flight_data;
 
+case class Flight_data2(
+    flightnr:String,
+	from:City,
+	to:City,
+	periods:PricePeriod,
+	airplaneType:AirplaneType,
+	reccPeriod: String) extends Flight_data;
 
 /**
  * Implementation Jonathan below
@@ -118,7 +137,4 @@ case class BookingSlot4(flight:Flight, typ:SeatType);
 sealed abstract class BookingSlotsUpdate extends Type;
 case class BookingSlotsUpdate1(price:Int) extends BookingSlotsUpdate;
 
-sealed abstract class Flight extends Type;
-case class Flight1(template:Template, period:Period);
-case class Flight2(fln:String);
 
