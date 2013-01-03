@@ -32,7 +32,6 @@ import handling.exceptions.AlreadyExistingAirportCode
 import handling.exceptions.AlreadyExistingAirportName
 import handling.exceptions.NoSuchAirportName
 import syntax.Airport
-import syntax.Template
 import handling.exceptions.NoSuchAirportCity
 import handling.exceptions.NoSuchAirportCode
 import handling.exceptions.NotAllowedAirportName
@@ -41,6 +40,8 @@ import scala.slick.session.Database
 import Database.threadLocalSession
 import scala.slick.jdbc.{GetResult, StaticQuery => Q}
 import Q.interpolation
+import scala.slick.session.Session
+import syntax.Template
 
 case class TemplateException(templ:Template, msg:String) extends Exception;
 
@@ -58,7 +59,6 @@ object Handler {
 		case ChangeAirportShort(airport, toShort) => changeAirportShortSuper(airport, toShort)
 		case ChangeAirportCity(airport, toCity) => changeAirportCitySuper(airport, toCity)
 		//		case ChangeAirportName(name, to) => changeAirportName(name, to)
-		//...
 		case ChangeTemplatePricesTo(templ, to) => changeTemplatePricesTo(templ, to)
 		}
 	}
@@ -78,14 +78,16 @@ object Handler {
 		if (data.short == null || data.short.length() != 3)
 			throw new IllegalCityCodeException(data.short);
 
-		if (evalGet(select("*", "CITY", "name=" + data.name)))
+		println(select("*", "city", "name=" + data.name));
+		
+		if (evalGet(select("*", "city", "name='" + data.name + "'")))
 			throw new AlreadyExistingCityNameException(data.name);
-		if (evalGet(select("*", "CITY", "idCity=" + data.short)))
+		if (evalGet(select("*", "city", "idCity='" + data.short + "'")))
 			throw new AlreadyExistingCityShortException(data.short);
 
 		//If all checks are ok, add this city to the database 
-		val query = insert("CITY", makeValues(List(data.short, data.name)));
-		executeQuery(query);
+		val query = insert("city", makeValues(List(data.short, data.name)));
+		executeUpdateQuery(query);
 		println("Add city with query: " + query);
 	}
 
@@ -108,20 +110,20 @@ object Handler {
 		if (!cityExists(city))
 			throw new NoSuchCityException(city);
 
-		if (evalGet(select("*", "CITY", "name=" + to)))
+		if (evalGet(select("*", "city", "name=" + to)))
 			throw new NotAllowedCityNameException(to);
 
-		executeQuery(update("CITY", "name=" + to, "name=" + city.name));
+		executeUpdateQuery(update("city", "name=" + to, "name=" + city.name));
 	}
 
 	def changeCityName(city: City2, to: String) = {
 		if (!cityExists(city))
 			throw new NoSuchCityException(city);
 
-		if (evalGet(select("*", "CITY", "name=" + to)))
+		if (evalGet(select("*", "city", "name=" + to)))
 			throw new NotAllowedCityNameException(city.short);
 
-		executeQuery(update("CITY", "name=" + to, "idCity=" + city.short));
+		executeUpdateQuery(update("city", "name=" + to, "idCity=" + city.short));
 	}
 
 	def changeCityCodeSuper(city:City, to:String) {
@@ -135,20 +137,20 @@ object Handler {
 		if (!cityExists(city))
 			throw new NoSuchCityException(city);
 
-		if (evalGet(select("*", "CITY", "idCity=" + to)))
+		if (evalGet(select("*", "city", "idCity=" + to)))
 			throw new NotAllowedCityCodeException(to);
 
-		executeQuery(update("CITY", "idCity=" + to, "name=" + city.name));
+		executeUpdateQuery(update("city", "idCity=" + to, "name=" + city.name));
 	}
 
 	def changeCityCode(city:City2, to:String) {
 		if (!cityExists(city))
 			throw new NoSuchCityException(city);
 
-		if (evalGet(select("*", "CITY", "idCity=" + to)))
+		if (evalGet(select("*", "city", "idCity=" + to)))
 			throw new NotAllowedCityCodeException(to);
 
-		executeQuery(update("CITY", "idCity=" + to, "idCity=" + city.short));
+		executeUpdateQuery(update("city", "idCity=" + to, "idCity=" + city.short));
 	}
 
 	//TODO naam veranderen
@@ -163,14 +165,14 @@ object Handler {
 		if (!cityExists(city))
 			throw new NoSuchCityException(city);
 
-		executeQuery(delete("CITY", "name=" + city.name));
+		executeUpdateQuery(delete("city", "name=" + city.name));
 	}
 
 	def removeCity(city:City2) {
 		if (!cityExists(city))
 			throw new NoSuchCityException(city);
 
-		executeQuery(delete("CITY", "idCity=" + city.short));
+		executeUpdateQuery(delete("city", "idCity=" + city.short));
 	}
 
 	def cityExistsSuper(city:City) : Boolean = {
@@ -202,7 +204,7 @@ object Handler {
 
 		//If all checks are ok, add this airport to the database 
 		val query = insert("AIRPORT", makeValues(List(data.short, data.city, data.name)));
-		executeQuery(query);
+		executeUpdateQuery(query);
 		println("Add airport with query: " + query);
 	}
 
@@ -220,21 +222,21 @@ object Handler {
 		if(!evalGet(select("*","AIRPORT","name=" + airport.name)))
 			throw new NoSuchAirportName(airport.name);
 		//TODO optional
-		executeQuery(update("AIRPORT","name= " + toName,"name=" + airport.name))
+		executeUpdateQuery(update("AIRPORT","name= " + toName,"name=" + airport.name))
 	}
 
 	def changeAirportName(airport:Airport2, toName:String) = {
 		if(!evalGet(select("*","AIRPORT","city=" + airport.city)))
 			throw new NoSuchAirportCity(airport.city);
 		//TODO optional
-		executeQuery(update("AIRPORT","name= " + toName,"city=" + airport.city))
+		executeUpdateQuery(update("AIRPORT","name= " + toName,"city=" + airport.city))
 	}
 
 	def changeAirportName(airport:Airport3, toName:String) = {
 		if(!evalGet(select("*","AIRPORT","code=" + airport.short)))
 			throw new NoSuchAirportCode(airport.short);
 		//TODO optional
-		executeQuery(update("AIRPORT","name= " + toName,"code=" + airport.short))
+		executeUpdateQuery(update("AIRPORT","name= " + toName,"code=" + airport.short))
 	}
 
 	def changeAirportShortSuper(airport:Airport, toShort:String) = {
@@ -251,21 +253,21 @@ object Handler {
 		if(!evalGet(select("*","AIRPORT","name=" + airport.name)))
 			throw new NoSuchAirportName(airport.name);
 		//TODO optional
-		executeQuery(update("AIRPORT","code= " + toShort,"name=" + airport.name))
+		executeUpdateQuery(update("AIRPORT","code= " + toShort,"name=" + airport.name))
 	}
 
 	def changeAirportShort(airport:Airport2, toShort:String) = {
 		if(!evalGet(select("*","AIRPORT","city=" + airport.city)))
 			throw new NoSuchAirportCity(airport.city);
 		//TODO optional
-		executeQuery(update("AIRPORT","code= " + toShort,"city=" + airport.city))
+		executeUpdateQuery(update("AIRPORT","code= " + toShort,"city=" + airport.city))
 	}
 
 	def changeAirportShort(airport:Airport3, toShort:String) = {
 		if(!evalGet(select("*","AIRPORT","code=" + airport.short)))
 			throw new NoSuchAirportCode(airport.short);
 		//TODO optional
-		executeQuery(update("AIRPORT","code= " + toShort,"code=" + airport.short))
+		executeUpdateQuery(update("AIRPORT","code= " + toShort,"code=" + airport.short))
 	}
 
 	def changeAirportCitySuper(airport:Airport, city:City) = {
@@ -280,21 +282,21 @@ object Handler {
 		if(!evalGet(select("*","AIRPORT","name=" + airport.name)))
 			throw new NoSuchAirportName(airport.name);
 		//TODO optional
-		executeQuery(update("AIRPORT","city= " + toCity,"name=" + airport.name))
+		executeUpdateQuery(update("AIRPORT","city= " + toCity,"name=" + airport.name))
 	}
 
 	def changeAirportCity(airport:Airport2, toCity:City) =  {
 		if(!evalGet(select("*","AIRPORT","city=" + airport.city)))
 			throw new NoSuchAirportCity(airport.city);
 		//TODO optional
-		executeQuery(update("AIRPORT","city= " + toCity,"city=" + airport.city))
+		executeUpdateQuery(update("AIRPORT","city= " + toCity,"city=" + airport.city))
 	}
 
 	def changeAirportCity(airport:Airport3, toCity:City) =  {
 		if(!evalGet(select("*","AIRPORT","code=" + airport.short)))
 			throw new NoSuchAirportCode(airport.short);
 		//TODO optional
-		executeQuery(update("AIRPORT","city= " + toCity,"code=" + airport.short))
+		executeUpdateQuery(update("AIRPORT","city= " + toCity,"code=" + airport.short))
 	}
 
 	def airportExists(airport:Airport1) : Boolean = {
@@ -314,7 +316,7 @@ object Handler {
 
 	// ----- End Airports ------ //
 
-	def changeTemplatePricesTo(templ: Template, to: List[PricePeriod]) = {
+	def changeTemplatePricesTo(templ:Template, to: List[PricePeriod]) = {
 		//Check template..
 		checkTemplate(templ);
 
@@ -323,43 +325,59 @@ object Handler {
 
 	// ------ CHECKS ----- //
 
-	def checkTemplate(templ: Template) = {
+	def checkTemplate(templ:Template) = {
 		//Check database to see if this template corresponds to a correct template
-		val query = "SELECT * FROM Templates WHERE flightnr=\"" + templ.flightnr + "\"";
-		println("Check template with query: " + query);
-
+//		val query = "SELECT * FROM Templates WHERE flightnr=\"" + templ.flightnr + "\"";
+//		println("Check template with query: " + query);
+//TODO aanpassen aan nieuwe template.
 		//If no such flightnr can be found..
 		throw new TemplateException(templ, "No template with such flightnr excists");
 	}
 
-	def evalGet(query: String): Boolean = {
+	def evalGet(query: String) : Boolean = {
+		return executeCount(query) >= 1
+	}
+
+	def executeCount(query: String): Int = {
 		//perform a get and return whether or not it was succesful.
+		var variable1 = 0;
+		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
+			variable1 = (Q.u + query).execute.asInstanceOf[Int];
+		}
+		//TODO return
+		return variable1;
+	}
+
+	def executeUpdateQuery(query: String) : Boolean = {
+		//evaluta the query but don't return any result
+		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
+			(Q.u + query).execute
+			return true;
+		}
+		println("query: " + query);
 		return false;
 	}
 
-	def executeQuery(query: String) = {
-		//evaluta the query but don't return any result
-		/*Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-				driver = "com.mysql.jdbc.Driver") withSession {
-			(Q.u + "insert into city(name) values('Brussels')").execute
-		}*/
-		println("query: " + query);
-	}
+	//	Q.queryNA[Coffee]("select * from coffees") foreach { c =>
+	//  println("  " + c.name + "\t" + c.supID + "\t" + c.price + "\t" + c.sales + "\t" + c.total)
+	//}
 
 	def select(select: String, from: String, where: String): String = {
-		return "SELECT " + select + " FROM " + from + " WHERE " + where;
+		return "select " + select + " from " + from + " where " + where;
 	}
 
 	def insert(into: String, values: String): String = {
-		return "INSERT INTO " + into + " VALUES " + values;
+		return "insert into " + into + " values " + values;
 	}
 
 	def update(update: String, set: String, where:String): String = {
-		return "UPDATE " + update + " SET " + set + " WHERE " + where;
+		return "update " + update + " SET " + set + " where " + where;
 	} 
 
 	def delete(from:String, where:String) : String = {
-		return "DELETE FROM " + from + " WHERE "+ where;
+		return "delete from " + from + " where "+ where;
 	}
 
 }
