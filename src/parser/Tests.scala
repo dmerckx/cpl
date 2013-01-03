@@ -45,7 +45,7 @@ class Tests extends FunSuite with ShouldMatchers {
    
    //-----Simple expression
     //Simple tests
-   parseSucces("ADD CITY {name:Brussels, short:BRU}",
+   parseSucces("ADD CITY {name:\"Brussels\", short:BRU}",
     			AddCity(City_data("Brussels", "BRU"))) 
    parseSucces("ADD CITY {name:Malinas, short:MAL}",
     			AddCity(City_data("Malinas", "MAL")))
