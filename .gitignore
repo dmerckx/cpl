@@ -4,3 +4,4 @@ bin/
 *.cache
 *.class
 *~
+/src/syntax/Operations.scala
