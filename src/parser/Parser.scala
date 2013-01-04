@@ -94,6 +94,7 @@ object Parser extends StandardTokenParsers {
   
   def parse (s: String):ParseRes = {
     val tokens = new lexical.Scanner(s)
+    printTokens(tokens);
     try{
 	    phrase(parseOp)(tokens) match {
 	     	case Success(op, _) => PSucces(op)
