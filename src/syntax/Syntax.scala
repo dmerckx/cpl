@@ -333,7 +333,7 @@ case class RemoveFlight(selectorFlight:Flight) extends Operation;
 case class ContainedPeriod(
     from:Opt[Date],
     to:Opt[Date],
-    day:Opt[Date]) extends Type
+    weekday:Opt[Date]) extends Type
 case class Period(
     contained:Opt[ContainedPeriod],
     from:Opt[Date],
