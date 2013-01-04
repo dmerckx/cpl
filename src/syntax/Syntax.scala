@@ -27,7 +27,7 @@ case class AddCity(data:City_data) extends Operation
  * ADD CITY { name: "New York" }
  */
 
-case class ChangeCity(citySelector:City, cityChange:City);
+case class ChangeCity(citySelector:City, cityChange:City) extends Operation;
 /*
  * CHANGE CITY { name: "New York" } TO { name: "New Orleans" }
  */
@@ -346,7 +346,7 @@ case class Period_data(
     weekday:Opt[String],
     startTime:Time) extends Type;
 //# Operations
-case class AddTemplatePeriod(selectorTemplate: Template, period:List[Period_data]);
+case class AddTemplatePeriod(selectorTemplate: Template, period:List[Period_data]) extends Operation;
 /*
  * CHANGE TEMPLATE {
  * 		fln: XAB300
@@ -357,7 +357,7 @@ case class AddTemplatePeriod(selectorTemplate: Template, period:List[Period_data
  * 		startTime: {h: 13}
  * }]
  */
-case class ChangeTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period, changePeriod:Period);
+case class ChangeTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period, changePeriod:Period) extends Operation;
 /*
  * CHANGE TEMPLATE {
  * 		fln: XAB300
@@ -370,7 +370,7 @@ case class ChangeTemplatePeriod(selectorTemplate: Template, selectorPeriod:Perio
  * 		startTime: {h: 13}
  * 	}
  */
-case class ChangeTemplatePeriods(selectorTemplate: Template, periods:List[Period_data]);
+case class ChangeTemplatePeriods(selectorTemplate: Template, periods:List[Period_data]) extends Operation;
 /*
  * CHANGE TEMPLATE {
  * 		fln: XAB300
@@ -381,7 +381,7 @@ case class ChangeTemplatePeriods(selectorTemplate: Template, periods:List[Period
  * 		startTime: {h: 13}
  * 	}]
  */
-case class RemoveTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period);
+case class RemoveTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period) extends Operation;
 /*
  * CHANGE TEMPLATE {
  * 		fln: XAB300
