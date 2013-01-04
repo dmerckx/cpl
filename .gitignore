@@ -1,6 +1,2 @@
 bin/
 
-.cache
-*.cache
-*.class
-*~

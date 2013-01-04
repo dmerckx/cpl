@@ -10,7 +10,7 @@ object Test {
 	Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
                   driver = "com.mysql.jdbc.Driver") withSession {
 	  val q2 = Q.query[Double, (String, String)]("""
-	      
+	      SELECT 
 	      """);
 	}
   }
