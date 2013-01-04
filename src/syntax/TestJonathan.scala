@@ -21,11 +21,16 @@ object TestJonathan {
 	  
 	  // Deletion (you can also do this using the three methods for insertion)
 	  // Delete all entries from the city table
-	  (Q.u + "DELETE FROM city").execute
+  	  // Note the use of .first instead of .execute to obtain the number of affected rows
+	  val nDelete = (Q.u + "DELETE FROM city").first
+	  println(nDelete + " rows deleted from city.");
 	  
 	  // Insertion method 1
-	  Q.updateNA("INSERT INTO city(`name`) VALUES('Leuven - 1')").execute
+	  // Note the use of .first instead of .execute to obtain the number of affected rows
+	  val nInsert =  Q.updateNA("INSERT INTO city(`name`) VALUES('Leuven - 1')").first
+	  println(nInsert + " rows inserted into city.");
 	  // Insertion method 2 - IDENTICAL to insertion method 1
+	  // Use execute if you don't care about the number of affected rows.
 	  (Q.u + ("INSERT INTO city(`name`) VALUES ('Leuven - 2')")).execute;
 	  // Insertion method 3 - requires definition of own insertion method, quite clean
 	  // I'd recommend this method.
