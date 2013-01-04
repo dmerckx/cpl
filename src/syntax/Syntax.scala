@@ -11,15 +11,15 @@ case class Filled[T](t:T) extends Opt[T]
 // Helper types
 case class Time(h: Opt[Int], m: Opt[Int], s: Opt[Int]) extends Type;
 case class Date(d:Int, m:Int, y:Int) extends Type;
-case class DateTime(date:Date, time:Opt[Time]) extends Type;
-case class Price(dollar : Opt[Int], cent : Opt[Int]) extends Type;
-
+case class DateTime(date:Date, time:Opt[Time]);
+case class Price(dollar : Opt[Int], cent : Opt[Int]);
+case class TimePeriod(from:DateTime, to:DateTime) extends Type;
 
 ////////////////////////////////////////////////////////////////////////////////
 // City ///////////////
 ////////////////////////////////////////////////////////////////////////////////
 //## Types
-case class City(id:Opt[Integer], name:Opt[String]) extends Type;
+case class City(id:Opt[Integer], name:Opt[String]);
 case class City_data(name:String) extends Type;
 //## Basic Operations
 case class AddCity(data:City_data) extends Operation
@@ -27,7 +27,7 @@ case class AddCity(data:City_data) extends Operation
  * ADD CITY { name: "New York" }
  */
 
-case class ChangeCity(citySelector:City, cityChange:City) extends Operation;
+case class ChangeCity(citySelector:City, cityChange:City);
 /*
  * CHANGE CITY { name: "New York" } TO { name: "New Orleans" }
  */
@@ -44,7 +44,7 @@ case class RemoveCity(citySelector:City) extends Operation
 ////////////////////////////////////////////////////////////////////////////////
 // For example queries: see City
 //## Types
-case class Airport(name: Opt[String], city: Opt[City], short: Opt[String]) extends Type
+case class Airport(name: Opt[String], city: Opt[City], short: Opt[String])
 case class Airport_data(city:City, name:String, short:String) extends Type
 //## Basic Operations
 case class AddAirport(data:Airport_data) extends Operation
@@ -251,7 +251,6 @@ case class RemoveTemplate(selectorTemplate:Template) extends Operation
 
 
 // Flight /////////////
-case class TimePeriod(from:DateTime, to:DateTime) extends Type;
 sealed abstract class Flight extends Type;
 // We have to subtype Flight because either departure time, arrival time or during interval needs to be specified.
 // Otherwise, a flight selector can potentially match an infinite number of flights.
@@ -403,7 +402,10 @@ sealed abstract class SeatInstance extends Type;
 case class SeatNumberInstances(number: Int, amt: Opt[Int]) extends SeatInstance
 case class SeatTypeInstances(seatType: String) extends SeatInstance
 
-case class ChangeTemplateSeatInstances(templateSelector:Template, seatInstanceSelectors:List[SeatInstance], seatInstances:SeatInstance_data) extends Operation
+case class ChangeTemplateSeatInstances(
+    templateSelector:Template,
+    seatInstanceSelectors:List[SeatInstance],
+    seatInstances:SeatInstance_data) extends Operation
 /*
  * CHANGE TEMPLATE {
  * 		airline : "ABC"
@@ -414,7 +416,9 @@ case class ChangeTemplateSeatInstances(templateSelector:Template, seatInstanceSe
  * 		seatNumber: 1000, price: { dollar: 100 }
  * }
  */
-case class ChangeTemplateSeatInstancesTo(templateSelector:Template, seatInstances:List[SeatInstance_data]) extends Operation
+case class ChangeTemplateSeatInstancesTo(
+    templateSelector:Template,
+    seatInstances:List[SeatInstance_data]) extends Operation
 /*
  * CHANGE TEMPLATE {
  * 		airline : "ABC"
@@ -425,8 +429,13 @@ case class ChangeTemplateSeatInstancesTo(templateSelector:Template, seatInstance
  * 		{ number: 100, amt: 2, price: { dollar: 0 } }
  * 	]
  */
-case class ChangeFlightSeatInstances(flightSelector:Flight, seatInstanceSelectors:List[SeatInstance], seatInstances:SeatInstance_data) extends Operation
-case class ChangeFlightSeatInstancesTo(flightSelector:Flight, seatInstances:List[SeatInstance_data]) extends Operation
+case class ChangeFlightSeatInstances(
+    flightSelector:Flight,
+    seatInstanceSelectors:List[SeatInstance],
+    seatInstances:SeatInstance_data) extends Operation
+case class ChangeFlightSeatInstancesTo(
+    flightSelector:Flight,
+    seatInstances:List[SeatInstance_data]) extends Operation
 /*
  * CHANGE FLIGHT {
  * 		template: { airline: "ABC" },

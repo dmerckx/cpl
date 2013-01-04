@@ -1,7 +1,5 @@
 bin/
-
 .cache
 *.cache
 *.class
 *~
-/src/syntax/Operations.scala
