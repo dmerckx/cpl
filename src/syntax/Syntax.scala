@@ -11,15 +11,15 @@ case class Filled[T](t:T) extends Opt[T]
 // Helper types
 case class Time(h: Opt[Int], m: Opt[Int], s: Opt[Int]) extends Type;
 case class Date(d:Int, m:Int, y:Int) extends Type;
-case class DateTime(date:Date, time:Opt[Time]);
-case class Price(dollar : Opt[Int], cent : Opt[Int]);
+case class DateTime(date:Date, time:Opt[Time]) extends Type;
+case class Price(dollar : Opt[Int], cent : Opt[Int]) extends Type;
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // City ///////////////
 ////////////////////////////////////////////////////////////////////////////////
 //## Types
-case class City(id:Opt[Integer], name:Opt[String]);
+case class City(id:Opt[Integer], name:Opt[String]) extends Type;
 case class City_data(name:String) extends Type;
 //## Basic Operations
 case class AddCity(data:City_data) extends Operation
@@ -27,7 +27,7 @@ case class AddCity(data:City_data) extends Operation
  * ADD CITY { name: "New York" }
  */
 
-case class ChangeCity(citySelector:City, cityChange:City);
+case class ChangeCity(citySelector:City, cityChange:City) extends Operation;
 /*
  * CHANGE CITY { name: "New York" } TO { name: "New Orleans" }
  */
@@ -44,7 +44,7 @@ case class RemoveCity(citySelector:City) extends Operation
 ////////////////////////////////////////////////////////////////////////////////
 // For example queries: see City
 //## Types
-case class Airport(name: Opt[String], city: Opt[City], short: Opt[String])
+case class Airport(name: Opt[String], city: Opt[City], short: Opt[String]) extends Type
 case class Airport_data(city:City, name:String, short:String) extends Type
 //## Basic Operations
 case class AddAirport(data:Airport_data) extends Operation
