@@ -335,7 +335,7 @@ case class ContainedPeriod(
     to:Opt[Date],
     day:Opt[Date]) extends Type
 case class Period(
-    contained:ContainedPeriod,
+    contained:Opt[ContainedPeriod],
     from:Opt[Date],
     to:Opt[Date],
     day:Opt[String],
