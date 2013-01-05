@@ -441,6 +441,7 @@ case class ChangeFlightSeatInstancesTo(
     seatInstances:List[SeatInstance_data]) extends Operation
 /*
  * CHANGE FLIGHT {
+ * 
  * 		template: { airline: "ABC" },
  * 		during : {
  * 			from : {d: 1, m: 1, y: 2013},
