@@ -11,9 +11,9 @@ case class Filled[T](t:T) extends Opt[T]
 // Helper types
 case class Time(h: Opt[Int], m: Opt[Int], s: Opt[Int]) extends Type;
 case class Date(d:Int, m:Int, y:Int) extends Type;
-case class DateTime(date:Date, time:Opt[Time]);
-case class Price(dollar : Opt[Int], cent : Opt[Int]);
-
+case class DateTime(date:Date, time:Opt[Time]) extends Type;
+case class Price(dollar : Opt[Int], cent : Opt[Int]) extends Type;
+case class TimePeriod(from:DateTime, to:DateTime) extends Type;
 
 ////////////////////////////////////////////////////////////////////////////////
 // City ///////////////
@@ -28,7 +28,7 @@ case class AddCity(data:City_data) extends Operation
  * ADD CITY { name: "New York" }
  */
 
-case class ChangeCity(citySelector:City, cityChange:City_change);
+case class ChangeCity(citySelector:City, cityChange:City) extends Operation;
 /*
  * CHANGE CITY { name: "New York" } TO { name: "New Orleans" }
  */
@@ -37,13 +37,17 @@ case class RemoveCity(citySelector:City) extends Operation
 /*
  * REMOVE CITY { name: "New York" } 
  */
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Airport ////////////
 ////////////////////////////////////////////////////////////////////////////////
 // For example queries: see City
 //## Types
-case class Airport(name: Opt[String], city: Opt[City], short: Opt[String])
+case class Airport(name: Opt[String], city: Opt[City], short: Opt[String]) extends Type
 case class Airport_data(city:City, name:String, short:String) extends Type
 //## Basic Operations
 case class AddAirport(data:Airport_data) extends Operation
@@ -250,7 +254,6 @@ case class RemoveTemplate(selectorTemplate:Template) extends Operation
 
 
 // Flight /////////////
-case class TimePeriod(from:DateTime, to:DateTime) extends Type;
 sealed abstract class Flight extends Type;
 // We have to subtype Flight because either departure time, arrival time or during interval needs to be specified.
 // Otherwise, a flight selector can potentially match an infinite number of flights.
@@ -335,7 +338,7 @@ case class ContainedPeriod(
     to:Opt[Date],
     day:Opt[Date]) extends Type
 case class Period(
-    contained:ContainedPeriod,
+    contained:Opt[ContainedPeriod],
     from:Opt[Date],
     to:Opt[Date],
     day:Opt[String],
@@ -346,7 +349,7 @@ case class Period_data(
     weekday:Opt[String],
     startTime:Time) extends Type;
 //# Operations
-case class AddTemplatePeriod(selectorTemplate: Template, period:List[Period_data]);
+case class AddTemplatePeriod(selectorTemplate: Template, period:List[Period_data]) extends Operation;
 /*
  * CHANGE TEMPLATE {
  * 		fln: XAB300
@@ -357,7 +360,7 @@ case class AddTemplatePeriod(selectorTemplate: Template, period:List[Period_data
  * 		startTime: {h: 13}
  * }]
  */
-case class ChangeTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period, changePeriod:Period);
+case class ChangeTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period, changePeriod:Period) extends Operation;
 /*
  * CHANGE TEMPLATE {
  * 		fln: XAB300
@@ -370,7 +373,7 @@ case class ChangeTemplatePeriod(selectorTemplate: Template, selectorPeriod:Perio
  * 		startTime: {h: 13}
  * 	}
  */
-case class ChangeTemplatePeriods(selectorTemplate: Template, periods:List[Period_data]);
+case class ChangeTemplatePeriods(selectorTemplate: Template, periods:List[Period_data]) extends Operation;
 /*
  * CHANGE TEMPLATE {
  * 		fln: XAB300
@@ -381,7 +384,7 @@ case class ChangeTemplatePeriods(selectorTemplate: Template, periods:List[Period
  * 		startTime: {h: 13}
  * 	}]
  */
-case class RemoveTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period);
+case class RemoveTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period) extends Operation;
 /*
  * CHANGE TEMPLATE {
  * 		fln: XAB300
@@ -402,7 +405,10 @@ sealed abstract class SeatInstance extends Type;
 case class SeatNumberInstances(number: Int, amt: Opt[Int]) extends SeatInstance
 case class SeatTypeInstances(seatType: String) extends SeatInstance
 
-case class ChangeTemplateSeatInstances(templateSelector:Template, seatInstanceSelectors:List[SeatInstance], seatInstances:SeatInstance_data) extends Operation
+case class ChangeTemplateSeatInstances(
+    templateSelector:Template,
+    seatInstanceSelectors:List[SeatInstance],
+    seatInstances:SeatInstance_data) extends Operation
 /*
  * CHANGE TEMPLATE {
  * 		airline : "ABC"
@@ -413,7 +419,9 @@ case class ChangeTemplateSeatInstances(templateSelector:Template, seatInstanceSe
  * 		seatNumber: 1000, price: { dollar: 100 }
  * }
  */
-case class ChangeTemplateSeatInstancesTo(templateSelector:Template, seatInstances:List[SeatInstance_data]) extends Operation
+case class ChangeTemplateSeatInstancesTo(
+    templateSelector:Template,
+    seatInstances:List[SeatInstance_data]) extends Operation
 /*
  * CHANGE TEMPLATE {
  * 		airline : "ABC"
@@ -424,8 +432,13 @@ case class ChangeTemplateSeatInstancesTo(templateSelector:Template, seatInstance
  * 		{ number: 100, amt: 2, price: { dollar: 0 } }
  * 	]
  */
-case class ChangeFlightSeatInstances(flightSelector:Flight, seatInstanceSelectors:List[SeatInstance], seatInstances:SeatInstance_data) extends Operation
-case class ChangeFlightSeatInstancesTo(flightSelector:Flight, seatInstances:List[SeatInstance_data]) extends Operation
+case class ChangeFlightSeatInstances(
+    flightSelector:Flight,
+    seatInstanceSelectors:List[SeatInstance],
+    seatInstances:SeatInstance_data) extends Operation
+case class ChangeFlightSeatInstancesTo(
+    flightSelector:Flight,
+    seatInstances:List[SeatInstance_data]) extends Operation
 /*
  * CHANGE FLIGHT {
  * 		template: { airline: "ABC" },
