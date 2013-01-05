@@ -335,7 +335,7 @@ case class ContainedPeriod(
     to:Opt[Date],
     day:Opt[Date]) extends Type
 case class Period(
-    contained:ContainedPeriod,
+    contained:Opt[ContainedPeriod],
     from:Opt[Date],
     to:Opt[Date],
     day:Opt[String],
@@ -438,6 +438,7 @@ case class ChangeFlightSeatInstancesTo(
     seatInstances:List[SeatInstance_data]) extends Operation
 /*
  * CHANGE FLIGHT {
+ * 
  * 		template: { airline: "ABC" },
  * 		during : {
  * 			from : {d: 1, m: 1, y: 2013},
