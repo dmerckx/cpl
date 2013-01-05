@@ -209,13 +209,13 @@ case class RemoveAirline(airlineCompanySelector:Airline) extends Operation
 case class Template(
     fln: Opt[String],
     airline: Opt[String],
-	from: Opt[City],
-	to: Opt[City],
+	from: Opt[Airport],
+	to: Opt[Airport],
 	airplaneType: Opt[AirplaneType]) extends Type;
 case class Template_data(
     fln: String,
-	from: City,
-	to: City,
+	from: Airport,
+	to: Airport,
 	airplaneType: AirplaneType,
 	prices: List[SeatInstance_data],
 	periods: List[Period_data]) extends Type;
