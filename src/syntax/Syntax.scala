@@ -126,16 +126,17 @@ case class Seat(number:Opt[Int], seatType:Opt[String]) extends Type;
 // type specifies the seat type
 case class Seat_data(number:Opt[Int], amt:Opt[Int], seatType:String) extends Type;
 //## Basic operations
-case class AddSeat(airplaneTypeSelector:AirplaneType, data:List[Seat_data]) extends Operation
+case class AddSeat(airplaneTypeSelector:AirplaneType, data:Seat_data) extends Operation
+case class AddSeats(airplaneTypeSelector:AirplaneType, data:List[Seat_data]) extends Operation
 /* 
  * CHANGE AIRPLANE TYPE	{
  * 		name: "Boeing 707"
- * } ADD SEAT {
+ * } ADD SEATS [{
  * 		type: business,
  * 		amt: 100
- * }
+ * }]
  */
-
+case class ChangeSeat(airplaneTypeSelector:AirplaneType, seatSelector:Seat, seatChange:Seat) extends Operation
 case class ChangeSeats(airplaneTypeSelector:AirplaneType, seatSelector:List[Seat], seatChange:Seat) extends Operation
 /* 
  * CHANGE AIRPLANE TYPE {
@@ -160,7 +161,7 @@ case class ChangeSeatsTo(airplaneTypeSelector:AirplaneType, data:List[Seat_data]
  * 		{ amt: 50 , type: first}
  * ]
  */
-
+case class RemoveSeats(seatSelectors:List[Seat]) extends Operation
 case class RemoveSeat(seatSelector:Seat) extends Operation
 /* 
  * CHANGE AIRPLANE TYPE	{ name: "Boeing 707"
