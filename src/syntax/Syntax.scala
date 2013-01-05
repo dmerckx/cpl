@@ -347,11 +347,11 @@ case class Period_data(
     weekday:Opt[String],
     startTime:Time) extends Type;
 //# Operations
-case class AddTemplatePeriod(selectorTemplate: Template, period:List[Period_data]) extends Operation;
+case class AddTemplatePeriods(selectorTemplate: Template, periods:List[Period_data]) extends Operation;
 /*
  * CHANGE TEMPLATE {
  * 		fln: XAB300
- * } ADD PERIOD [{ 
+ * } ADD PERIODS [{ 
  * 		from : {d: 1, m: 1, y:1990},
  * 		to: {d: 31, m: 12, y:1990},
  * 		weekday: monday,
@@ -371,7 +371,7 @@ case class ChangeTemplatePeriod(selectorTemplate: Template, selectorPeriod:Perio
  * 		startTime: {h: 13}
  * 	}
  */
-case class ChangeTemplatePeriods(selectorTemplate: Template, periods:List[Period_data]) extends Operation;
+case class ChangeTemplatePeriodsTo(selectorTemplate: Template, periods:List[Period_data]) extends Operation;
 /*
  * CHANGE TEMPLATE {
  * 		fln: XAB300
@@ -382,13 +382,13 @@ case class ChangeTemplatePeriods(selectorTemplate: Template, periods:List[Period
  * 		startTime: {h: 13}
  * 	}]
  */
-case class RemoveTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period) extends Operation;
+case class RemoveTemplatePeriods(selectorTemplate: Template, selectorPeriods:List[Period]) extends Operation;
 /*
  * CHANGE TEMPLATE {
  * 		fln: XAB300
- * } REMOVE PERIOD {
+ * } REMOVE PERIODS [{
  * 		contained: {day: {d: 28, m: 12, y: 1990} }
- * }
+ * }]
  */
 
 // Bookable ///////////
