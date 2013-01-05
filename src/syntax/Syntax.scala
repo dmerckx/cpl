@@ -19,7 +19,8 @@ case class Price(dollar : Opt[Int], cent : Opt[Int]);
 // City ///////////////
 ////////////////////////////////////////////////////////////////////////////////
 //## Types
-case class City(id:Opt[Integer], name:Opt[String]);
+case class City(id:Opt[Int], name:Opt[String]) extends Type;
+case class City_change(name:Opt[String]) extends Type;
 case class City_data(name:String) extends Type;
 //## Basic Operations
 case class AddCity(data:City_data) extends Operation
@@ -27,7 +28,7 @@ case class AddCity(data:City_data) extends Operation
  * ADD CITY { name: "New York" }
  */
 
-case class ChangeCity(citySelector:City, cityChange:City);
+case class ChangeCity(citySelector:City, cityChange:City_change);
 /*
  * CHANGE CITY { name: "New York" } TO { name: "New Orleans" }
  */
@@ -36,8 +37,6 @@ case class RemoveCity(citySelector:City) extends Operation
 /*
  * REMOVE CITY { name: "New York" } 
  */
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 // Airport ////////////
@@ -48,8 +47,8 @@ case class Airport(name: Opt[String], city: Opt[City], short: Opt[String])
 case class Airport_data(city:City, name:String, short:String) extends Type
 //## Basic Operations
 case class AddAirport(data:Airport_data) extends Operation
-case class ChangeAirport(airportSelector:Airport, airportChange:Airport)
-case class RemoveAirport(airportSelector:Airport)
+case class ChangeAirport(airportSelector:Airport, airportChange:Airport) extends Operation
+case class RemoveAirport(airportSelector:Airport) extends Operation
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
