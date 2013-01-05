@@ -58,8 +58,8 @@ case class RemoveAirport(airportSelector:Airport) extends Operation
 // Distance ///////////
 // For example queries: see City
 //## Types
-case class Dist(from:Opt[City], to:Opt[City], dist:Opt[Int]) extends Type;
-case class Dist_data(from:City, to:City, dist:Int) extends Type;
+case class Dist(from:Opt[Airport], to:Opt[Airport], dist:Opt[Int]) extends Type;
+case class Dist_data(from:Airport, to:Airport, dist:Int) extends Type;
 //## Basic Operations
 case class AddDist(data:Dist_data) extends Operation
 case class ChangeDistTo(distSelector:Dist, distChange:Dist) extends Operation
@@ -72,11 +72,11 @@ case class RemoveDist(distSelector:Dist) extends Operation
 ////////////////////////////////////////////////////////////////////////////////
 // For example queries: see City
 //## Types
-case class FlightTime(from:Opt[City], to:Opt[City], airplaneType: Opt[AirplaneType], duration: Opt[Time]) extends Type;
-case class FlightTime_data(from:City, to:City, airplaneType:AirplaneType, time:Time) extends Type;
+case class FlightTime(from:Airport, to:Airport, airplaneType: AirplaneType) extends Type;
+case class FlightTime_data(from:Airport, to:Airport, airplaneType:AirplaneType, time:Time) extends Type;
 //## Basic Operations
 case class AddFlightTime(data:FlightTime_data) extends Operation
-case class ChangeFlightTime(flightTimeSelector:FlightTime, flightTimeChanges:FlightTime) extends Operation
+case class ChangeFlightTime(flightTimeSelector:FlightTime, duration:Time) extends Operation
 case class RemoveFlightTime(flightTimeSelector:FlightTime) extends Operation
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -347,6 +347,7 @@ case class Period_data(
     weekday:Opt[String],
     startTime:Time) extends Type;
 //# Operations
+case class AddTemplatePeriod(selectorTemplate: Template, periods:Period_data) extends Operation;
 case class AddTemplatePeriods(selectorTemplate: Template, periods:List[Period_data]) extends Operation;
 /*
  * CHANGE TEMPLATE {
@@ -358,6 +359,7 @@ case class AddTemplatePeriods(selectorTemplate: Template, periods:List[Period_da
  * 		startTime: {h: 13}
  * }]
  */
+case class ChangeTemplatePeriods(selectorTemplate: Template, selectorPeriods:List[Period], changePeriod:Period) extends Operation;
 case class ChangeTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period, changePeriod:Period) extends Operation;
 /*
  * CHANGE TEMPLATE {
@@ -382,6 +384,7 @@ case class ChangeTemplatePeriodsTo(selectorTemplate: Template, periods:List[Peri
  * 		startTime: {h: 13}
  * 	}]
  */
+case class RemoveTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period) extends Operation;
 case class RemoveTemplatePeriods(selectorTemplate: Template, selectorPeriods:List[Period]) extends Operation;
 /*
  * CHANGE TEMPLATE {
@@ -403,6 +406,10 @@ sealed abstract class SeatInstance extends Type;
 case class SeatNumberInstances(number: Int, amt: Opt[Int]) extends SeatInstance
 case class SeatTypeInstances(seatType: String) extends SeatInstance
 
+case class ChangeTemplateSeatInstance(
+    templateSelector:Template,
+    seatInstanceSelectors:SeatInstance,
+    seatInstances:SeatInstance_data) extends Operation
 case class ChangeTemplateSeatInstances(
     templateSelector:Template,
     seatInstanceSelectors:List[SeatInstance],
@@ -430,6 +437,10 @@ case class ChangeTemplateSeatInstancesTo(
  * 		{ number: 100, amt: 2, price: { dollar: 0 } }
  * 	]
  */
+case class ChangeFlightSeatInstance(
+    flightSelector:Flight,
+    seatInstanceSelectors:SeatInstance,
+    seatInstances:SeatInstance_data) extends Operation
 case class ChangeFlightSeatInstances(
     flightSelector:Flight,
     seatInstanceSelectors:List[SeatInstance],
