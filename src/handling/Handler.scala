@@ -234,11 +234,12 @@ object Handler {
 				for (typeId <- airplaneTypeList) {
 					val query = "INSERT INTO flighttime(`idFromCity`,`idToCity`,`idAirplaneType`,`duration`) VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')";
 					println(query);
+					(Q.u + query).execute();			
 					(Q.u + query).execute();
 				}
 			}
 		}
-	}
+	}	
 
 	def addFlightTime(flightTime: FlightTime_data) {
 		execute[FlightTime_data](insert,flightTime);
