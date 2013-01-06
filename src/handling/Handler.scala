@@ -14,6 +14,8 @@ case class Count(nr: Int);
 case class Id(id: Int);
 case class Code(id:String);
 
+case class TemplateId(idAirline: String, idTemplate: Int);
+
 object Handler {
 
 	/**
@@ -50,6 +52,12 @@ object Handler {
 		case AddDist(distance) => addDist(distance);
 
 		//FLIGHTTIME
+
+		//Flight
+		case AddFlight(flight) => addFlight(flight);
+		case AddFlight2(flight, prices) => addFlight2(flight, prices);
+		case ChangeFlight(flightFrom, flightTo) => changeFlight(flightFrom, flightTo);
+		case RemoveFlight(flight) => removeFlight(flight);
 		}
 	}
 
@@ -206,15 +214,16 @@ object Handler {
 	def getAirportToIds(flightTime: FlightTime_data) : List[String] = {
 			return getAirportIds(flightTime.to); 
 	}
-	
+
 	def getAirplaneTypeIds(flightTime: FlightTime_data) : List[Int] = {
-		return getAirplaneTypeIds(flightTime.airplaneType);
+			return getAirplaneTypeIds(flightTime.airplaneType);
 	}
-	
+
 	def insert(flightTime: FlightTime_data) : Unit = {
 		val duration = flightTime.time;
 		duration match {
-		  case Time(Empty(),Empty(),Empty()) => throw new NoDurationException();		  
+		  case Time(Empty(),Empty(),Empty()) => throw new NoDurationException();
+		  case _ => 
 		}
 		val airportFromList = getAirportFromIds(flightTime);
 		val airportToList = getAirportToIds(flightTime);
@@ -223,102 +232,204 @@ object Handler {
 		for (fromId <- airportFromList) {
 			for (toId <- airportToList) {
 				for (typeId <- airplaneTypeList) {
-					(Q.u + "INSERT INTO flighttime('idFromCity','idToCity','idAirplaneType','duration') VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')").execute();
+					val query = "INSERT INTO flighttime(`idFromCity`,`idToCity`,`idAirplaneType`,`duration`) VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')";
+					println(query);
+					(Q.u + query).execute();			
+				}
+			}
+		}
+	}	
+
+	def addFlightTime(flightTime: FlightTime_data) {
+		execute[FlightTime_data](insert,flightTime);
+	}
+
+	def isValidHours(duration: Time) : Boolean = {
+			var result = true;
+			duration match {
+			case Time(Empty(),_,_) => 
+			case Time(Filled(h),_,_) => result = (h >= 0 && h < 24)
+			}
+			return result;
+	}
+
+	def isValidMinutes(duration: Time) : Boolean = {
+			var result = true;
+			duration match {
+			case Time(_,Empty(),_) => 
+			case Time(_,Filled(m),_) => result = (m >= 0 && m < 60)
+			}
+			return result;
+	}
+
+	def isValidSeconds(duration: Time) : Boolean = {
+			var result = true;
+			duration match {
+			case Time(_,_,Empty()) => 
+			case Time(_,_,Filled(s)) => result = (s >= 0 && s < 60)
+			}
+			return result;
+	}
+
+	def isValidDuration(duration: Time) : Boolean = {
+			return (isValidHours(duration) && isValidMinutes(duration) && isValidSeconds(duration));
+	}
+
+	def getDurationHours(duration: Time) : String = {
+			var result = "";
+			duration match {
+			case Time(Empty(),_,_) => result = "00"
+			case Time(Filled(h),_,_) => (if (h/10 == 0) {result = ("0"+h+"")} else {result = (h+"")})
+			}
+			return result;
+	}
+
+	def getDurationMinutes(duration: Time) : String = {
+			var result = "";
+			duration match {
+			case Time(_,Empty(),_) => result = "00"
+			case Time(_,Filled(m),_) => (if (m/10 == 0) {result = ("0"+m+"")} else {result = (m+"")})
+			}
+			return result;
+	}
+
+	def getDurationSeconds(duration: Time) : String = {
+			var result = "";
+			duration match {
+			case Time(_,_,Empty()) => result = "00"
+			case Time(_,_,Filled(s)) => (if (s/10 == 0) {result = ("0"+s+"")} else {result = (s+"")})
+			}
+			return result;
+	}
+
+	def createDurationString(duration: Time) : String = {
+			if (!isValidDuration(duration)) {
+				throw new IllegalDurationException();
+			}
+			else {
+				return getDurationHours(duration) + ":" + getDurationMinutes(duration) + ":" + getDurationSeconds(duration);
+			}
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Template /////////
+	////////////////////////////////////////////////////////////////////////////////
+	
+	def getAirportFromIds(template: Template_data) : List[String] = {
+		return getAirportIds(template.from);
+	}
+
+	def getAirportToIds(template: Template_data) : List[String] = {
+		return getAirportIds(template.to); 
+	}
+	
+	def getAirplaneTypeIds(template: Template_data) : List[Int] = {
+		return getAirplaneTypeIds(template.airplaneType);
+	}
+	
+	def getAirlineIdFromFLN(fln: String) : String = {
+		var result = fln.substring(0,3);
+		if (fln.substring(2,3).matches("[0-9]")) {
+			return fln.substring(0,2);
+		}
+		else {
+			return result;
+		}
+	}
+	
+	def getTemplateIdFromFLN(fln: String) : String = {
+		val flnLength = fln.length();
+		var result = fln.substring(flnLength - 4, flnLength);
+		if (fln.substring(flnLength - 4, flnLength - 3).matches("[A-Z]")) {
+			return fln.substring(flnLength - 3, flnLength);
+		}
+		else {
+			return result;
+		}
+	}
+	
+	def isValidFLN(fln: String) : Boolean = {
+		if (!fln.matches("[A-Z]{2-3}[0-9]{3-4}")) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+	
+	def insert(template: Template_data,prices: List[SeatInstance_data], periods: List[Period_data]) {
+		val airportFromList = getAirportFromIds(template);
+		val airportToList = getAirportToIds(template);
+		val airplaneTypeList = getAirplaneTypeIds(template);
+		val fln = template.fln;
+		if (!isValidFLN(fln)) {
+			throw new IllegalFLNException(fln)
+		}
+		val airlineId = getAirlineIdFromFLN(fln);
+		val templateId = getTemplateIdFromFLN(fln);
+		
+		for (fromId <- airportFromList) {
+			for (toId <- airportToList) {
+				for (typeId <- airplaneTypeList) {
+					
 				}
 			}
 		}
 	}
-	
-	def addFlightTime(flightTime: FlightTime_data) {
-		execute[FlightTime_data](insert,flightTime);
-	}
-	
-	def isValidHours(duration: Time) : Boolean = {
-		var result = true;
-		duration match {
-		  case Time(Empty(),_,_) => 
-		  case Time(Filled(h),_,_) => result = (h >= 0 && h < 24)
-		}
-		return result;
-	}
-	
-	def isValidMinutes(duration: Time) : Boolean = {
-		var result = true;
-		duration match {
-		  case Time(_,Empty(),_) => 
-		  case Time(_,Filled(m),_) => result = (m >= 0 && m < 60)
-		}
-		return result;
-	}
-	
-	def isValidSeconds(duration: Time) : Boolean = {
-		var result = true;
-		duration match {
-		  case Time(_,_,Empty()) => 
-		  case Time(_,_,Filled(s)) => result = (s >= 0 && s < 60)
-		}
-		return result;
-	}
-	
-	def isValidDuration(duration: Time) : Boolean = {
-		return (isValidHours(duration) && isValidMinutes(duration) && isValidSeconds(duration));
-	}
-	
-	def getDurationHours(duration: Time) : String = {
-		var result = "";
-		duration match {
-		  case Time(Empty(),_,_) => result = "00"
-		  case Time(Filled(h),_,_) => (if (h/10 == 0) {result = ("0"+h+"")} else {result = (h+"")})
-		}
-		return result;
-	}
-	
-	def getDurationMinutes(duration: Time) : String = {
-		var result = "";
-		duration match {
-		  case Time(_,Empty(),_) => result = "00"
-		  case Time(_,Filled(m),_) => (if (m/10 == 0) {result = ("0"+m+"")} else {result = (m+"")})
-		}
-		return result;
-	}
-	
-	def getDurationSeconds(duration: Time) : String = {
-	  var result = "";
-	  duration match {
-	    case Time(_,_,Empty()) => result = "00"
-	    case Time(_,_,Filled(s)) => (if (s/10 == 0) {result = ("0"+s+"")} else {result = (s+"")})
-	  }
-	  return result;
-	}
-	
-	def createDurationString(duration: Time) : String = {
-		if (!isValidDuration(duration)) {
-			throw new IllegalDurationException();
-		}
-		else {
-			return getDurationHours(duration) + ":" + getDurationMinutes(duration) + ":" + getDurationSeconds(duration);
-		}
-	}
+
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// AirplaneType /////////
 	////////////////////////////////////////////////////////////////////////////////
 
 	def insert(airplaneType: AirplaneType_data): Unit = {
-			//TODO 
 			(Q.u + "INSERT INTO airplanetype(`name`) VALUES ('" + airplaneType.name + "')").execute;
 	}
 
+	def getSeatNumbers(airplaneType: AirplaneType, seat:Seat_data) : List[Int] = {
+			val list =  getSeatNumbers(airplaneType);
+			var defaultSeatNumber = 1;
+			if(list.size >= 1){
+				defaultSeatNumber =list.max + 1;
+			}
+
+			var defaultAmount = 1;
+			var result = List[Int]();
+			seat match {
+			case Seat_data(Filled(number),_, _) => defaultSeatNumber = number;
+			}
+			seat match {
+			case Seat_data(_,Filled(amount), _) => defaultAmount = amount;
+			}
+			while(result.size != defaultAmount) {
+				result = defaultSeatNumber :: result;
+				defaultSeatNumber = defaultSeatNumber + 1;
+			}
+			return result;
+	}
+
 	def addAirplaneType(airplaneType:AirplaneType_data, arrangement: List[Seat_data]) {
-		//TODO handle list
 		if(airplaneType.name != null) {
-			if (!airplaneType.name.matches("[a-zA-Z]+"))
+			if (!airplaneType.name.matches("[a-zA-Z0-9]+"))
 				throw new IllegalAirplaneTypeNameException(airplaneType.name);
 
 			if (hasUniqueResult(select("count(*)", "airplanetype", "(name='" + airplaneType.name + "')")))
 				throw new AlreadyExistingAirplaneTypeException(airplaneType.name);
 
 			execute[AirplaneType_data](insert, airplaneType);
+
+			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+					driver = "com.mysql.jdbc.Driver") withSession {
+				val ids = getAirplaneTypeIds(AirplaneType(Filled(airplaneType.name)));
+				for(airplaneTypeId <- ids) {
+					for(seat <- arrangement) {
+						getIds("Select idSeatType from SeatType where name='" + seat.seatType +"'").foreach(seatType =>
+						for(seatNumber <- getSeatNumbers(AirplaneType(Filled(airplaneType.name)), seat)) {
+							(Q.u + "INSERT INTO seat(`idSeatType`,`airplaneType`, `seatNumber`) VALUES ('" + (seatType+"") + "','" + (airplaneTypeId+"") + "','" + (seatNumber+"") + "')").execute;
+						});
+					}
+				}
+			}
 		}
 	}
 
@@ -371,7 +482,7 @@ object Handler {
 		if(name != null) {
 			if (!name.matches("[a-zA-Z]+"))
 				throw new IllegalSeatTypeException(name);
-			if(hasUniqueResult(select("name","SeatType","name='" + name + "'")))
+			if(hasUniqueResult(select("Count(*)","SeatType","name='" + name + "'")))
 				throw new AlreadyExistingSeatTypeException(name:String);
 
 			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
@@ -391,13 +502,87 @@ object Handler {
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// Dist /////////
+	// Flight /////////
 	////////////////////////////////////////////////////////////////////////////////
 
+	def addFlight(Flight:Flight_data) {
+
+	}
+
+	def addFlight2(Flight:Flight_data, prices: List[SeatInstance_data]) {
+
+	}
+
+	def changeFlight(flightSelector:Flight, changeFlight:Flight_change) {
+
+	}
+
+	def removeFlight(flightSelector:Flight) {
+
+	}
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Database ////////////
 	////////////////////////////////////////////////////////////////////////////////	
+
+	def getTemplateIds(template:Template) : List[TemplateId] = {
+			var result = List[TemplateId]();
+			var airlineIds = List[String]();
+			var flnVal = "";
+			var airportFromIds = List[String]();
+			var airportToIds = List[String]();
+			var airplaneTypeIds = List[Int]();
+			template match {
+			case Template(Filled(airline),_,_,_,_) => airlineIds = getAirlineIds(airline);
+			case Template(_,Filled(fln),_,_,_) => flnVal = fln;
+			case Template(_,_,Filled(from),_,_) => airportFromIds = getAirportIds(from);
+			case Template(_,_,_,Filled(to),_) => airportFromIds = getAirportIds(to);
+			case Template(_,_,_,_,Filled(airplaneType)) => airplaneTypeIds = getAirplaneTypeIds(airplaneType);
+			}
+			
+			var select = "";
+			select+= addOr(airlineIds,"idAirline");
+			select+= addOr(airportFromIds,"idAirportFrom");
+			select+= addOr(airportToIds,"idAirportTo");
+			select+= addOr(airplaneTypeIds.asInstanceOf[List[Integer]],"idAirplaneType");
+			
+			if(!flnVal.equals("")) {
+				select += addAnd(select);
+				//TODO parse fln
+			}
+
+			if(!select.equals(""))
+				result = getTemplateIds("Select idAirline,idTemplate from template where " + select);
+			else
+				result = getTemplateIds("Select idAirline,idTemplate from template");
+			return result;
+	}
+
+	
+	def addAnd(string:String) : String = {
+	  var result = "";
+	  if(!string.equals(""))
+			result = string + " and ";
+	  return result;
+	}
+	
+	def addOr(list:List[Object], name:String) : String = {
+	  var result = "";
+	  if(list.size >= 1) {
+		  		result += addAnd(result);
+				result +="(";
+				list.foreach(attribute => result += (name + "='" + attribute + "' or "));
+				result = result.substring(0, result.length()-4); //remove last "or"
+				result +=")";
+			}
+	  return result;
+	}
+	
+	def getAirlineIds(airline:Airline) : List[String] = {
+			var result = List[String]();
+			//TODO
+			return result;
+	}
 
 	def getCityIds(city:City) : List[Int] = {
 			var cityName ="";
@@ -462,6 +647,15 @@ object Handler {
 				result = getCodes("Select code from airport where " + select);
 			else
 				result = getCodes("Select code from airport");
+			return result;
+	}
+
+	def getSeatNumbers(airplaneType:AirplaneType) : List[Int] = {
+			var result = List[Int]();
+			val ids = getAirplaneTypeIds(airplaneType);
+			for(Id <- ids) {
+				result = getIds("Select seatNumber from seat where airplaneType='" + (Id+"") + "'") ::: result;
+			}
 			return result;
 	}
 
@@ -530,6 +724,13 @@ object Handler {
 			return result;
 	}
 
+	implicit val getTemplateIdResult = GetResult(r => TemplateId(r.nextString,r.nextInt));
+	def getTemplateIds(query:String) : List[TemplateId] = {
+			var result = List[TemplateId]();
+			Q.queryNA[TemplateId](query).foreach( r => result = r :: result);
+			return result;
+	}
+	
 	def select(select: String, from: String, where: String): String = {
 			return "select " + select + " from " + from + " where " + where;
 	}
