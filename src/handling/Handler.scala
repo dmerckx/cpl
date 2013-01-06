@@ -52,6 +52,7 @@ object Handler {
 		case AddDist(distance) => addDist(distance);
 
 		//FLIGHTTIME
+		case AddFlightTime(flightTime) => addFlightTime(flightTime);
 
 		//Flight
 		case AddFlight(flight) => addFlight(flight);
@@ -191,7 +192,7 @@ object Handler {
 			val airportToList = getAirportToIds(dist);
 			for(idFrom <- airportFromList) {
 				for(idTo <- airportToList) {
-					(Q.u + "INSERT INTO distance('idFromCity','idToCity','distance') VALUES ('" + idFrom + "','" + idTo + "','" + (dist.dist+"") + "')").execute();
+					(Q.u + "INSERT INTO distance(`idFromCity`,`idToCity`,`distance`) VALUES ('" + idFrom + "','" + idTo + "','" + (dist.dist+"") + "')").execute();
 				}
 			}
 	}
@@ -220,6 +221,21 @@ object Handler {
 	}
 
 	def insert(flightTime: FlightTime_data) : Unit = {
+		val duration = flightTime.time;
+		duration match {
+		  case Time(Empty(),Empty(),Empty()) => throw new NoDurationException();
+		  case _ => 
+		}
+		val airportFromList = getAirportFromIds(flightTime);
+		val airportToList = getAirportToIds(flightTime);
+		val airplaneTypeList = getAirplaneTypeIds(flightTime);
+		val durationString = createDurationString(duration);
+		for (fromId <- airportFromList) {
+			for (toId <- airportToList) {
+				for (typeId <- airplaneTypeList) {
+					val query = "INSERT INTO flighttime(`idFromCity`,`idToCity`,`idAirplaneType`,`duration`) VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')";
+					println(query);
+					(Q.u + query).execute();
 			val duration = flightTime.time;
 			duration match {
 			case Time(Empty(),Empty(),Empty()) => throw new NoDurationException();		  
@@ -319,6 +335,72 @@ object Handler {
 			}
 	}
 
+	////////////////////////////////////////////////////////////////////////////////
+	// Template /////////
+	////////////////////////////////////////////////////////////////////////////////
+	
+	def getAirportFromIds(template: Template_data) : List[String] = {
+		return getAirportIds(template.from);
+	}
+
+	def getAirportToIds(template: Template_data) : List[String] = {
+		return getAirportIds(template.to); 
+	}
+	
+	def getAirplaneTypeIds(template: Template_data) : List[Int] = {
+		return getAirplaneTypeIds(template.airplaneType);
+	}
+	
+	def getAirlineIdFromFLN(fln: String) : String = {
+		var result = fln.substring(0,3);
+		if (fln.substring(2,3).matches("[0-9]")) {
+			return fln.substring(0,2);
+		}
+		else {
+			return result;
+		}
+	}
+	
+	def getTemplateIdFromFLN(fln: String) : String = {
+		val flnLength = fln.length();
+		var result = fln.substring(flnLength - 4, flnLength);
+		if (fln.substring(flnLength - 4, flnLength - 3).matches("[A-Z]")) {
+			return fln.substring(flnLength - 3, flnLength);
+		}
+		else {
+			return result;
+		}
+	}
+	
+	def isValidFLN(fln: String) : Boolean = {
+		if (!fln.matches("[A-Z]{2-3}[0-9]{3-4}")) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+	
+	def insert(template: Template_data,prices: List[SeatInstance_data], periods: List[Period_data]) {
+		val airportFromList = getAirportFromIds(template);
+		val airportToList = getAirportToIds(template);
+		val airplaneTypeList = getAirplaneTypeIds(template);
+		val fln = template.fln;
+		if (!isValidFLN(fln)) {
+			throw new IllegalFLNException(fln)
+		}
+		//val airlineId = get
+		
+		for (fromId <- airportFromList) {
+			for (toId <- airportToList) {
+				for (typeId <- airplaneTypeList) {
+					
+				}
+			}
+		}
+	}
+
+	
 	////////////////////////////////////////////////////////////////////////////////
 	// AirplaneType /////////
 	////////////////////////////////////////////////////////////////////////////////
