@@ -21,10 +21,11 @@ object Handler {
 	 */
 	def handle(op: Operation) = {
 		op match {
-			//CITY
+		//CITY
 		case AddCity(data) => addCity(data);
 		case ChangeCity(city, to) => changeCity(city, to);
 		case RemoveCity(city) => removeCity(city);
+		
 		//AIRPORT
 		case AddAirport(airport) => addAirport(airport);
 		case ChangeAirport(airportFrom, airportTo) => changeAirport(airportFrom, airportTo);
@@ -44,7 +45,11 @@ object Handler {
 		case AddSeatType(seatType) => addSeatType(seatType);
 		case RemoveSeatType(seatType) => removeSeatType(seatType);
 		case ChangeSeatType(from, to) => changeSeatType(from, to);
-
+		
+		//DISTANCE
+		case AddDist(distance) => addDist(distance);
+		
+		//FLIGHTTIME
 		}
 	}
 
@@ -160,7 +165,35 @@ object Handler {
 	def changeAirport(airportFrom: Airport,airportTo: Airport) {
 		//TODO
 	}
-
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// Distances /////////
+	////////////////////////////////////////////////////////////////////////////////
+	
+	def getAirportFromIds(dist: Dist_data) : List[Int] = {
+		getAirportIds(dist.from);
+	}
+	
+	def getAirportToIds(dist: Dist_data) : List[Int] = {
+		getAirportIds(dist.to);
+	}
+	
+	def insert(dist: Dist_data) : Unit = {
+		val airportFromList = getAirportFromIds(dist);
+		val airportToList = getAirportToIds(dist);
+		for(idFrom <- airportFromList) {
+			for(idTo <- airportToList) {
+				(Q.u + "INSERT INTO distance('idFromCity','idToCity','distance') VALUES ('" + (idFrom + "") + "','" + (idTo + "") + "','" + (dist.dist+"") + "')").execute();
+			}
+		}
+	}
+	
+	def addDist(dist: Dist_data) {
+		if (dist.dist <= 0) {
+			throw new IllegalDistanceException(dist.dist);
+		}
+		execute[Dist_data](insert, dist);
+	}
 
 	////////////////////////////////////////////////////////////////////////////////
 	// AirplaneType /////////
