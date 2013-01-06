@@ -359,7 +359,6 @@ case class Period_data(
     weekday:Opt[String],
     startTime:Time) extends Type;
 //# Operations
-case class AddTemplatePeriod(selectorTemplate: Template, periods:Period_data) extends Operation;
 case class AddTemplatePeriods(selectorTemplate: Template, periods:List[Period_data]) extends Operation;
 /*
  * ADD PERIODS [{ 
@@ -372,7 +371,6 @@ case class AddTemplatePeriods(selectorTemplate: Template, periods:List[Period_da
  * }
  */
 case class ChangeTemplatePeriods(selectorTemplate: Template, selectorPeriods:List[Period], changePeriod:Period) extends Operation;
-case class ChangeTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period, changePeriod:Period) extends Operation;
 /*
  * CHANGE PERIOD {
  * 		contained: {day: {d: 28, m: 12, y:1990}}
@@ -396,7 +394,6 @@ case class ChangeTemplatePeriodsTo(selectorTemplate: Template, periods:List[Peri
  * 		startTime: {h: 13}
  * 	}]
  */
-case class RemoveTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period) extends Operation;
 case class RemoveTemplatePeriods(selectorTemplate: Template, selectorPeriods:List[Period]) extends Operation;
 /*
  * REMOVE PERIODS [{
@@ -418,10 +415,7 @@ sealed abstract class SeatInstance extends Type;
 case class SeatNumberInstances(number: Int, amt: Opt[Int]) extends SeatInstance
 case class SeatTypeInstances(seatType: String) extends SeatInstance
 
-case class ChangeTemplateSeatInstance(
-    templateSelector:Template,
-    seatInstanceSelectors:SeatInstance,
-    seatInstances:SeatInstance_data) extends Operation
+//CHANGE INSTANCE syntax is er nog
 case class ChangeTemplateSeatInstances(
     templateSelector:Template,
     seatInstanceSelectors:List[SeatInstance],
@@ -436,18 +430,19 @@ case class ChangeTemplateSeatInstances(
  * 		seatNumber: 1000, price: { dollar: 100 }
  * }
  */
+//CHANGE SEAT INSTANCE syntax is er nog
 case class ChangeTemplateSeatInstancesTo(
     templateSelector:Template,
     seatInstances:List[SeatInstance_data]) extends Operation
 /*
- * CHANGE SEAT INSTANCES [
- * 		{ seatType: business },
- * 		{ seatNumber: 404, amt: 100 }
- * } OF TEMPLATE {
+ * CHANGE SEAT INSTANCES OF TEMPLATE {
  * 		airline : "ABC"
- * } TO	{
- * 		seatNumber: 1000, price: { dollar: 100 }
- * }
+ * } TO [ 
+ * 		{ type: business, price: { dollar: 100 } },
+ * 		{ type: economy, price: { dollar: 50 } },
+ * 		{ type: first, price: { dollar: 75 } },
+ * 		{ number: 100, amt: 2, price: { dollar: 0 } }
+ * 	]
  */
 case class ChangeFlightSeatInstance(
     flightSelector:Flight,
