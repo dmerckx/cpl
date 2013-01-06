@@ -234,31 +234,7 @@ object Handler {
 				for (typeId <- airplaneTypeList) {
 					val query = "INSERT INTO flighttime(`idFromCity`,`idToCity`,`idAirplaneType`,`duration`) VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')";
 					println(query);
-					(Q.u + query).execute();			
-			val duration = flightTime.time;
-			duration match {
-			case Time(Empty(),Empty(),Empty()) => throw new NoDurationException();		  
-			}
-			val airportFromList = getAirportFromIds(flightTime);
-			val airportToList = getAirportToIds(flightTime);
-			val airplaneTypeList = getAirplaneTypeIds(flightTime);
-			val durationString = createDurationString(duration);
-			for (fromId <- airportFromList) {
-				for (toId <- airportToList) {
-					for (typeId <- airplaneTypeList) {
-						val airportFromList = getAirportFromIds(flightTime);
-						val airportToList = getAirportToIds(flightTime);
-						val airplaneTypeList = getAirplaneTypeIds(flightTime);
-						val duration = flightTime.time;
-						for (fromId <- airportFromList) {
-							for (toId <- airportToList) {
-								for (typeId <- airplaneTypeList) {
-									(Q.u + "INSERT INTO flighttime('idFromCity','idToCity','idAirplaneType','duration') VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + (duration.h+"") + ":" + (duration.m+"") + ":" + (duration.s+"") + "')").execute();
-								}
-								(Q.u + "INSERT INTO flighttime('idFromCity','idToCity','idAirplaneType','duration') VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')").execute();
-							}
-						}
-					}
+					(Q.u + query).execute();
 				}
 			}
 		}
