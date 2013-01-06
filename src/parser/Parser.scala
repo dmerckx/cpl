@@ -12,7 +12,8 @@ case class SkippedAttribute(name:String) extends Exception
 case class TooLittleAttributes() extends Exception
 case class DoubleAttribute() extends Exception
 
-//TODO: use custom Lexical instead of StdLexical
+//TODO: use custom Lexical instead of StdLexical (remove 'comments functionality' etc)
+//TODO: remove prints
 object Parser extends StandardTokenParsers {
   type ParserType[T] = Parser[T];
   type Att = Parser[(String,Any)]
@@ -21,9 +22,11 @@ object Parser extends StandardTokenParsers {
    /**
    * Parse a list of attributes
    */
-  def parseAtts(p:Parser[(String,Any)]):Parser[Map[String,Any]] =
-    "{" ~> parseAttsRec(p) <~ "}" ^^ {atts => atts} |
+  def parseAtts(p:Parser[(String,Any)]):Parser[Map[String,Any]] = {
+    "{" ~> parseAttsRec(p) <~ "}" ^^ {atts =>
+      atts} |
     "{" ~ "}" ^^ {_ => Map()}
+  }
     
   /**
    * Parse a list of attributes recursively
@@ -39,7 +42,7 @@ object Parser extends StandardTokenParsers {
    * Select a value from a map. Throws an error if the value could not be found.
    */
   def sel[T](key:String, map:Map[String,Any]):T = {
-    println(" -- selects " + key + " from " + map);
+    if(print) println(" -- select " + key + " from " + map);
     if(map.contains(key))
       map.get(key).get match {case t:T => t}
     else
@@ -50,7 +53,7 @@ object Parser extends StandardTokenParsers {
    * Select an optional value from a map.
    */
   def selOpt[T](key:String, map:Map[String,Any]):Opt[T] = {
-    println(" -- selectOpt " + key + " from " + map);
+    if(print) println(" -- selectopt " + key + " from " + map);
     if(map.contains(key))
       map.get(key).get match {case s:T => Filled(s)}
     else
@@ -60,31 +63,28 @@ object Parser extends StandardTokenParsers {
   /**
    * Parse a type
    */
-  def parseType[T <: Type](attName:String, typeParser:Parser[T]):Parser[(String, T)] =
-    ident ~ ":" ~ typeParser ^^ {
-    case attName~":"~typ => (attName, typ)}
+  def parseType[T <: Type](attName:String, typeParser:Parser[T]):Parser[(String, T)] = {
+    ident ~ ":" ~ typeParser ^? {
+    case att~":"~typ if att==attName => 
+      if(print) println(" -- parser type -> "+ att +" vs " +attName  + ": " + typ);
+      (attName, typ)}
+  }
   
   /**
    * Parse a string
    */
   val parseStrDirect:Parser[String] =
-    "{" ~> (ident | stringLit) <~ "}" ^^ {s => s}
+    "{" ~> (ident | stringLit) <~ "}" ^^ {s => s} | 
+    (ident | stringLit) ^^ {s => s} 
+    
   def parseStr(attName:String):Parser[(String, String)] =
-    ident ~ ":" ~ (ident | stringLit) ^^ {case attName~":"~str => (attName, str)}
+    ident ~ ":" ~ (ident | stringLit) ^?
+    {case att~":"~str if att==attName => if(print) println(" --" + attName + " :" + str);
+    						(attName, str)}
     
   def parseInt(attName:String):Parser[(String, Int)] =
-    ident ~ ":" ~ numericLit ^^ {
-    case attName~":"~int => (attName, int.toInt)}
-    
-  def parseIntList(attName:String):Parser[(String, List[Int])] = {
-    def par:Parser[List[Int]] = {
-      numericLit ~ "," ~ par ^^ {case int~","~rest => int.toInt :: rest} |
-      numericLit ^^ {case int => List(int.toInt)}
-    }
-    
-    ident <~ ":" <~ "[" <~ "]" ^^ {case attName => (attName, List())} |
-    ident ~ ":" ~ "[" ~ par ~ "]" ^^ {case attName~":"~"["~list~"]" => (attName, list)} 
-  }
+    ident ~ ":" ~ numericLit ^? {
+    case att~":"~int if att==attName=> (attName, int.toInt)}
   
   def typeList[T <: Type](typ:Parser[T]):Parser[List[T]] = {
     def par:Parser[List[T]] = {
@@ -98,7 +98,8 @@ object Parser extends StandardTokenParsers {
   
   
   lexical.delimiters += ("{", "}", ",", ":", "[", "]")
-  lexical.reserved += ("ADD", "TO", "CHANGE", "REMOVE", "CITY", "AIRPORT", "AIRPLANE", "TYPE", "DISTANCE")
+  lexical.reserved += ("ADD", "CHANGE", "REMOVE", "TO", "FROM", "WITH", "INSTANCES", "AND",  
+		  				"CITY", "AIRPORT", "AIRPLANE", "TYPE", "DISTANCE", "SEAT", "SEATS", "PERIOD", "PERIODS", "TEMPLATE", "FLIGHT")
   
   // ----- ALL THE ACTUAL OPERATORS ----- //
     
@@ -115,14 +116,14 @@ object Parser extends StandardTokenParsers {
     "ADD" ~> "FLIGHT" ~> "TIME" ~> flightTimeData ^^ {f => AddFlightTime(f)} |
     "CHANGE" ~> "DISTANCE" ~> flightTime ~ "TO" ~ flightTime ^^ {case f~"TO"~t => ChangeFlightTime(f,t)} |
     "REMOVE" ~> "DISTANCE" ~> flightTime ^^ {f => RemoveFlightTime(f)} |
-    "ADD" ~> "AIRPLANE" ~> "TYPE" ~> airplaneTypeData ~ "WITH" ~ "SEATS" ~ typeList(seatData) ^^ {case a~"WITH"~"SEATS"~s => AddAirplaneType(a, s)} |
+    "ADD" ~> "AIRPLANE" ~> "TYPE" ~> airplaneTypeData ~ "WITH" ~ "SEATS" ~ typeList(seatData) ^^ {case a~_~_~s => AddAirplaneType(a, s)} |
     "CHANGE" ~> "AIRPLANE" ~> "TYPE" ~> flightTime ~ "TO" ~ flightTime ^^ {case f~"TO"~t => ChangeFlightTime(f,t)} |
     "REMOVE" ~> "AIRPLANE" ~> "TYPE" ~> airplaneType ^^ {a => RemoveAirplaneType(a)} |
-    "ADD" ~> "SEAT" ~> seatData ~ "TO" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ^^ {case s~"TO"~"AIRPLANE"~"TYPE"~a => AddSeats(a,List(s))} |
-    "ADD" ~> "SEATS" ~> typeList(seatData) ~ "TO" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ^^ {case s~"OF"~"AIRPLANE"~"TYPE"~a => AddSeats(a,s)} |
-    "CHANGE" ~> "SEAT" ~> seat ~ "OF" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ~ "TO" ~ seat ^^ {case s1~"OF"~"AIRPLANE"~"TYPE"~a~"TO"~s2 => ChangeSeats(a,List(s1),s2)} |
-    "CHANGE" ~> "SEATS" ~> typeList(seat) ~ "OF" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ~ "TO" ~ seat ^^ {case s1~"OF"~"AIRPLANE"~"TYPE"~a~"TO"~s2 => ChangeSeats(a,s1,s2)} |
-    "CHANGE" ~> "SEATS" ~> "OF" ~> "AIRPLANE" ~> "TYPE" ~> airplaneType ~ "TO" ~ typeList(seatData) ^^ {case a~"TO"~s => ChangeSeatsTo(a,s)} |
+    "ADD" ~> "SEAT" ~> seatData ~ "TO" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ^^ {case s~_~_~_~a => AddSeats(a,List(s))} |
+    "ADD" ~> "SEATS" ~> typeList(seatData) ~ "TO" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ^^ {case s~"OF"~_~_~a => AddSeats(a,s)} |
+    "CHANGE" ~> "SEAT" ~> seat ~ "OF" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ~ "TO" ~ seat ^^ {case s1~"OF"~_~_~a~_~s2 => ChangeSeats(a,List(s1),s2)} |
+    "CHANGE" ~> "SEATS" ~> typeList(seat) ~ "OF" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ~ "TO" ~ seat ^^ {case s1~_~_~_~a~_~s2 => ChangeSeats(a,s1,s2)} |
+    "CHANGE" ~> "SEATS" ~> "OF" ~> "AIRPLANE" ~> "TYPE" ~> airplaneType ~ "TO" ~ typeList(seatData) ^^ {case a~_~s => ChangeSeatsTo(a,s)} |
     "REMOVE" ~> "SEAT" ~> seat ~ "FROM" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ^^ {case s~"FROM"~"AIRPLANE"~"TYPE"~a => RemoveSeats(a, List(s))} |
     "REMOVE" ~> "SEATS" ~> typeList(seat) ~ "FROM" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ^^ {case s~"FROM"~"AIRPLANE"~"TYPE"~a => RemoveSeats(a, s)} |
     "ADD" ~> "SEAT" ~> "TYPE" ~> parseStrDirect ^^ {s => AddSeatType(s)} |
@@ -131,8 +132,8 @@ object Parser extends StandardTokenParsers {
     "ADD" ~> "AIRLINE" ~> airlineData ^^ {a => AddAirline(a)} |
     "CHANGE" ~> "AIRLINE" ~> airline ~ "TO" ~ airline ^^ {case f~"TO"~t => ChangeAirline(f,t)} |
     "REMOVE" ~> "AIRLINE" ~> airline ^^ {a => RemoveAirline(a)} |
-    "ADD" ~> "TEMPLATE" ~> templateData ~ "ADD" ~ "SEAT" ~ "INSTANCES" ~ typeList(seatInstanceData) ~ "ADD" ~ "PERIODS" ~ typeList(periodData) ^^
-    	{case t~_~_~_~s~_~_~p => AddTemplate(t, s, p)} |
+    "ADD" ~> "TEMPLATE" ~> templateData ~ "WITH" ~ "SEAT" ~ "INSTANCES" ~ typeList(seatInstanceData) ~ "AND" ~ "WITH" ~ "PERIODS" ~ typeList(periodData) ^^
+    					{case t~_~_~_~s~_~_~_~p => AddTemplate(t, s, p)} |
     "CHANGE" ~> "TEMPLATE" ~> template ~ "TO" ~ templateChange ^^ {case f~"TO"~t => ChangeTemplate(f,t)} |
     "REMOVE" ~> "TEMPLATE" ~> template ^^ {t => RemoveTemplate(t)} |
     "ADD" ~> "FLIGHT" ~> flightData ^^ {f => AddFlight(f)} |
@@ -147,17 +148,17 @@ object Parser extends StandardTokenParsers {
     "REMOVE" ~> "PERIOD" ~> period ~ "FROM" ~ "TEMPLATE" ~ template ^^ {case p~_~_~t => RemoveTemplatePeriods(t, List(p))} |  
     "REMOVE" ~> "PERIODS" ~> typeList(period) ~ "FROM" ~ "TEMPLATE" ~ template ^^ {case p~_~_~t => RemoveTemplatePeriods(t, p)} |
     "CHANGE" ~> "SEAT" ~> "INSTANCE" ~> seatInstance ~ "OF" ~ "TEMPLATE" ~ template ~ "TO" ~ seatInstanceData ^^
-    		{case s1~"OF"~_~t~"TO"~s2 => ChangeTemplateSeatInstances(t, List(s1), s2)} |
+    					{case s1~"OF"~_~t~"TO"~s2 => ChangeTemplateSeatInstances(t, List(s1), s2)} |
     "CHANGE" ~> "SEAT" ~> "INSTANCES" ~> typeList(seatInstance) ~ "OF" ~ "TEMPLATE" ~ template ~ "TO" ~ seatInstanceData ^^
-    		{case s1~"OF"~_~t~"TO"~s2 => ChangeTemplateSeatInstances(t, s1, s2)} |
+    					{case s1~"OF"~_~t~"TO"~s2 => ChangeTemplateSeatInstances(t, s1, s2)} |
     "CHANGE" ~> "SEAT" ~> "INSTANCES" ~> "OF" ~> "TEMPLATE" ~> template ~ "TO" ~ typeList(seatInstanceData) ^^
-    		{case t~"TO"~s => ChangeTemplateSeatInstancesTo(t, s)} |
+    					{case t~"TO"~s => ChangeTemplateSeatInstancesTo(t, s)} |
     "CHANGE" ~> "SEAT" ~> "INSTANCE" ~> seatInstance ~ "OF" ~ "FLIGHT" ~ flight ~ "TO" ~ seatInstanceData ^^
-    		{case s1~"OF"~_~f~"TO"~s2 => ChangeFlightSeatInstances(f, List(s1), s2)} | 
+    					{case s1~"OF"~_~f~"TO"~s2 => ChangeFlightSeatInstances(f, List(s1), s2)} | 
     "CHANGE" ~> "SEAT" ~> "INSTANCES" ~> typeList(seatInstance) ~ "OF" ~ "FLIGHT" ~ flight ~ "TO" ~ seatInstanceData ^^
-    		{case s1~"OF"~_~f~"TO"~s2 => ChangeFlightSeatInstances(f, s1, s2)} |
+    					{case s1~"OF"~_~f~"TO"~s2 => ChangeFlightSeatInstances(f, s1, s2)} |
     "CHANGE" ~> "SEAT" ~> "INSTANCES" ~> "OF" ~> "FLIGHT" ~> flight ~ "TO" ~ typeList(seatInstanceData) ^^
-    		{case f~"TO"~s => ChangeFlightSeatInstancesTo(f, s)}
+    					{case f~"TO"~s => ChangeFlightSeatInstancesTo(f, s)}
     
     
   // ----- ALL THE ACTUAL TYPES ----- //
@@ -175,9 +176,11 @@ object Parser extends StandardTokenParsers {
   val dateTime:Parser[DateTime] =
     parseAtts(dateTimeAtts) ^^ {as => DateTime(sel[Date]("date", as), selOpt[Time]("time", as))}
   
-  val priceAtts = parseInt("dollar") | parseInt("cent")
+  val euroAtts = parseInt("euro") | parseInt("cent")
+  val dollarAtts = parseInt("euro") | parseInt("cent")
   val price:Parser[Price] =
-    parseAtts(priceAtts) ^^ {as => Price(selOpt[Int]("dollar", as), selOpt[Int]("cent", as))}
+    parseAtts(euroAtts) ^? {case as => Euro(selOpt[Int]("euro", as), selOpt[Int]("cent", as))}
+    parseAtts(dollarAtts) ^^ {as => Dollar(selOpt[Int]("dollar", as), selOpt[Int]("cent", as))}
   
   val timePerdiodAtts = parseType("from",dateTime) | parseType("to", dateTime)
   val timePeriod =
@@ -257,9 +260,9 @@ object Parser extends StandardTokenParsers {
   //Template
   val templateAtts =
     parseStr("fln") |
+    parseType("airplaneType", airplaneType) |
     parseType("from", airport) |
-    parseType("to", airport) |
-    parseType("airplaneType", airplaneType)
+    parseType("to", airport)
   val templateSelectAtts =
     parseType("airline", airline)
   val template = parseAtts(templateSelectAtts) ^^
@@ -287,12 +290,12 @@ object Parser extends StandardTokenParsers {
    val containedPeriod = parseAtts(contPeriodAtts) ^^
      {as => ContainedPeriod(selOpt[Date]("from", as), selOpt[Date]("to", as), selOpt[Date]("day", as))}
    
-   val periodDataAtts = fromToAtts | parseStr("weekday") | parseType("startTime", time)
-   val periodAtts = parseType("contained", containedPeriod) | periodDataAtts | parseType("startTime", time)
+   val periodDataAtts = fromToAtts | parseStr("weekday") | parseType("departure", time)
+   val periodAtts = parseType("contained", containedPeriod) | periodDataAtts
    val period = parseAtts(periodAtts) ^^
-     {as => Period(selOpt[ContainedPeriod]("contained", as), selOpt[Date]("from", as), selOpt[Date]("to", as), selOpt[String]("weekday", as), selOpt[Time]("startTime", as))}
+     {as => Period(selOpt[ContainedPeriod]("contained", as), selOpt[Date]("from", as), selOpt[Date]("to", as), selOpt[String]("weekday", as), selOpt[Time]("departure", as))}
    val periodData = parseAtts(periodAtts) ^^
-     {as => Period_data(selOpt[Date]("from", as), selOpt[Date]("to", as), selOpt[String]("weekday", as), sel[Time]("startTime", as))}
+     {as => Period_data(selOpt[Date]("from", as), selOpt[Date]("to", as), selOpt[String]("weekday", as), sel[Time]("departure", as))}
   
    //Flights
    val flightDataAtts = 
@@ -317,18 +320,6 @@ object Parser extends StandardTokenParsers {
      parseAtts(flightDataAtts) ^^ {as => Flight_data(sel[Template]("template", as), sel[DateTime]("departure", as),
          selOpt[DateTime]("arrival", as), selOpt[AirplaneType]("airplaneType", as))}
      
-     
-     
-   
-//  val prices1:Parser[(String,Any)] =
-//    parseInt("price") |
-//    parseIntList("seats") 
-//  val prices2:Parser[(String,Any)] =
-//    parseInt("price") 
-//  val parsePrices: Parser[Prices] = 
-//    parseAtts(prices1) ^? {case as => Prices1(sel("price",as), sel("seats", as))}
-//    parseAtts(prices2) ^^ {as => Prices2(sel("price",as), sel("type", as))}
-  
   
   /**
    * Used for tests
@@ -348,9 +339,14 @@ object Parser extends StandardTokenParsers {
     }
   } 
   
-  def parse (s: String):ParseRes = {
+  //Quick fix for debugging purposes
+  var print:Boolean = false;
+  
+  def parse (s: String):ParseRes = parse(s, false)
+  def parse (s: String, print:Boolean):ParseRes = {
     val tokens = new lexical.Scanner(s)
-    printTokens(tokens);
+    this.print = print;
+    if(print) printTokens(tokens);
     try{
 	    phrase(parseOp)(tokens) match {
 	     	case Success(op, _) => PSucces(op)

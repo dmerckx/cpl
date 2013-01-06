@@ -12,7 +12,10 @@ case class Filled[T](t:T) extends Opt[T]
 case class Time(h: Opt[Int], m: Opt[Int], s: Opt[Int]) extends Type;
 case class Date(d:Int, m:Int, y:Int) extends Type;
 case class DateTime(date:Date, time:Opt[Time]) extends Type;
-case class Price(dollar : Opt[Int], cent : Opt[Int]) extends Type;
+
+sealed abstract class Price extends Type
+case class Dollar(dollar : Opt[Int], cent : Opt[Int]) extends Price;
+case class Euro(euro : Opt[Int], cent : Opt[Int]) extends Price;
 case class TimePeriod(from:DateTime, to:DateTime) extends Type;
 
 ////////////////////////////////////////////////////////////////////////////////

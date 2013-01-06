@@ -20,6 +20,20 @@ class Tests extends FunSuite with ShouldMatchers {
         	  case PFail(msg) =>
         	    fail("'parse failed: " + msg + "'")
         	}
+        	
+        	if(!e.toString().equals(outp.toString()))
+        	  fail("expressions not equal");
+        }
+    }
+    
+    def parseSuccesAndPrint(expr:String, outp: => Operation) {
+    	test("parse expression: " + expr + " <--> " + outp) {
+        	val out = outp
+            val e:Operation = Parser.parse(expr, true) match{
+        	  case PSucces(o) => o
+        	  case PFail(msg) =>
+        	    fail("'parse failed: " + msg + "'")
+        	}
         	println(e.toString());
         	println(outp.toString());
         	
@@ -56,33 +70,6 @@ class Tests extends FunSuite with ShouldMatchers {
         }
     }
    
-//   //-----Simple expression
-//    //Simple tests
-//    //Reverse order
-//   parseSucces("ADD CITY {short:MAL, name:Malinas}",
-//    			AddCity(City_data("Malinas", "MAL")))
-//    //Parse with quotation marks
-//   parseSucces("ADD CITY {short:\"MAL\", name:Malinas}",
-//    			AddCity(City_data("Malinas", "MAL")))
-//   parseSucces("ADD CITY {short:NY, name:\"New York\"}",
-//    			AddCity(City_data("New York", "NY")))
-//    			
-//    			
-//   //-----Expression with nested type & optional parameters
-//    //Standard tests
-//   parseSucces("ADD AIRPORT {name:Brussels_Airport, city:{name:brussels, short:bru}, short:BRU}",
-//    			AddAirport(Airport_data(City(Filled("brussels"),Filled("bru")),"Brussels_Airport","BRU")))
-//   parseSucces("ADD AIRPORT {name:Brussels_Airport, city:{short:bru}, short:BRU}",
-//    			AddAirport(Airport_data(City(Empty(),Filled("bru")),"Brussels_Airport","BRU")))
-//    //Optional parameters unfilled
-//   parseSucces("ADD AIRPORT {name:Brussels_Airport, city:{name:brussels}, short:BRU}",
-//    			AddAirport(Airport_data(City(Filled("brussels"),Empty()),"Brussels_Airport","BRU")))
-//    //Reverse order
-//   parseSucces("ADD AIRPORT {city:{short:bru}, short:BRU, name:Brussels_Airport}",
-//    			AddAirport(Airport_data(City(Empty(),Filled("bru")),"Brussels_Airport","BRU")))
-//   parseSucces("ADD AIRPORT {name:Brussels_Airport, short:BRU, city:{short:bru}}",
-//    			AddAirport(Airport_data(City(Empty(),Filled("bru")),"Brussels_Airport","BRU")))
-    			
    //-----Different operations-----
    //-----CITIES-----
    parseSucces("ADD CITY {name:Brussels}",
@@ -125,6 +112,49 @@ class Tests extends FunSuite with ShouldMatchers {
 			       Empty(),
 			       Empty())))
   
+   //-----Uit de opgave----
+   parseSuccesAndPrint("ADD TEMPLATE {" +
+   	"	  fln: BM1628,"+
+	"      from: {name: \"Brussels airport\"},"+
+	"      to: {name: Edinburh},"+
+	"      airplaneType: {name: \"Boeing 727\"}"+
+	"  } WITH SEAT INSTANCES ["+
+	"      {type: economy, price: {euro: 210}},"+
+	"      {type: business, price: {euro: 340}}"+
+	"  ] AND WITH PERIODS ["+
+	"      {weekday: monday, 	departure:{h:09, m:55}},"+
+	"      {weekday: wednesday, departure:{h:09, m:55}},"+
+	"      {weekday: friday, 	departure:{h:09, m:55}}"+
+	"  ]",
+		AddTemplate(
+		   Template_data(
+		       "BM1628",
+		       Airport(Empty(), Filled("Brussels airport"), Empty()),
+		       Airport(Empty(), Filled("Edinburh"), Empty()),
+		       AirplaneType(Filled("Boeing 727"))
+		       ),
+		   List(
+		       SeatTypeInstances_data("economy", Euro(Filled(210), Empty())),
+		       SeatTypeInstances_data("business", Euro(Filled(340), Empty()))
+		   ),
+		   List(
+		       Period_data(Empty(), Empty(), Filled("monday"), Time(Filled(9),Filled(55),Empty())),
+		       Period_data(Empty(), Empty(), Filled("wednesday"), Time(Filled(9),Filled(55),Empty())),
+		       Period_data(Empty(), Empty(), Filled("friday"), Time(Filled(9),Filled(55),Empty()))
+		   )
+		));
+		
+	/*	+
+	"  CHANGE SEAT INSTANCES OF FLIGHT {"+
+	"      template: {fln: SAB888},"+
+	"      during: {"+
+	"          from: { d: 15, m:  6, y: 2012 },"+
+	"          to: { d: 9, m: 12, y: 2016 }"+
+	"     }"+
+	"  } TO ["+
+	"   {type: business, price: {dollar: 268}},"+
+	"    {type: economy, price: {dollar: 370}}"+
+	"  ]"*/
 		   
    //-----Different types------
    
