@@ -127,19 +127,10 @@ object Handler {
 	// Airport ////////////
 	////////////////////////////////////////////////////////////////////////////////
 
-	def getCityName(airport:Airport_data) : String =  {
-			var cityName = "";
-			airport match {
-			case Airport_data(City(Filled(city)), name, short) => cityName = city;
-			case Airport_data(City(Empty()), name, short) => //nothing
-			}
-			return cityName;
-	}
-
 	def insert(airport: Airport_data): Unit = {
 			val cityName = getCityName(airport);
-			val id = getId("SELECT idCity FROM CITY WHERE (city.name='" + cityName +"')");
-			(Q.u + "INSERT INTO airport(`code`,`city`,`name`) VALUES ('" + airport.short + "','" + (id+"") + "','" + airport.name + "')").execute; 
+			val id = getIds("SELECT idCity FROM CITY WHERE (city.name='" + cityName +"')").foreach(id => 
+			(Q.u + "INSERT INTO airport(`code`,`city`,`name`) VALUES ('" + airport.short + "','" + (id+"") + "','" + airport.name + "')").execute); 
 	}
 
 	def addAirport(airport: Airport_data) {
@@ -269,6 +260,41 @@ object Handler {
 	// Database ////////////
 	////////////////////////////////////////////////////////////////////////////////	
 
+	def getCityIds(city:City) : List[Int] = {
+	  var cityName ="";
+	  var result = List[Int]();
+		city match {
+		  case City(Filled(name)) => cityName = name;
+		  case City(Empty()) => //donothing
+		}
+		
+		if(!cityName.equals("")) {
+		  result = getIds("SELECT idCity FROM CITY WHERE (city.name='" + cityName +"')") ::: result;
+		}
+		return result;
+	}
+	
+	def getCityName(airport:Airport_data) : String =  {
+			var cityName = "";
+			airport match {
+			case Airport_data(City(Filled(city)), name, short) => cityName = city;
+			case Airport_data(City(Empty()), name, short) => //nothing
+			}
+			return cityName;
+	}
+	
+	def getAirportIds(airport:Airport) : List[Int] = {
+	  var airportName ="";
+	  var airportShort = "";
+	  var airportCities = List[Int]();
+//	  airport match {
+//	    case Airport(City(Filled(city)), Filled(name), Filled(short)) => (airportName = name, airportShort = short)
+//	  }
+	  var result = List[Int]();
+	  
+	  return result;
+	}
+	
 	def execute[Type](func: (Type => Unit), data: Type) {
 		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
 				driver = "com.mysql.jdbc.Driver") withSession {
@@ -307,9 +333,10 @@ object Handler {
 	}
 
 	implicit val getIdResult = GetResult(r => Id(r.nextInt));
-	def getId(query:String) : Int = {
-			val q = Q.queryNA[Id](query);
-			return q.first.id;
+	def getIds(query:String) : List[Int] = {
+	  var result = List[Int]();
+		Q.queryNA[Id](query).foreach( r => result = r.id :: result);
+		return result;
 	}
 
 	def select(select: String, from: String, where: String): String = {
