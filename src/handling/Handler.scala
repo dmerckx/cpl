@@ -206,32 +206,48 @@ object Handler {
 	def getAirportToIds(flightTime: FlightTime_data) : List[String] = {
 			return getAirportIds(flightTime.to); 
 	}
-	
+
 	def getAirplaneTypeIds(flightTime: FlightTime_data) : List[Int] = {
-		return getAirplaneTypes(flightTime.airplaneType);
+			return getAirplaneTypes(flightTime.airplaneType);
 	}
-	
+
 	def insert(flightTime: FlightTime_data) : Unit = {
-		val airportFromList = getAirportFromIds(flightTime);
-		val airportToList = getAirportToIds(flightTime);
-		val airplaneTypeList = getAirplaneTypeIds(flightTime);
-		val duration = flightTime.time;
-		for (fromId <- airportFromList) {
-			for (toId <- airportToList) {
-				for (typeId <- airplaneTypeList) {
-					(Q.u + "INSERT INTO flighttime('idFromCity','idToCity','idAirplaneType','duration') VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + (duration.h+"") + ":" + (duration.m+"") + ":" + (duration.s+"") + "')").execute();
+			val airportFromList = getAirportFromIds(flightTime);
+			val airportToList = getAirportToIds(flightTime);
+			val airplaneTypeList = getAirplaneTypeIds(flightTime);
+			val duration = flightTime.time;
+			for (fromId <- airportFromList) {
+				for (toId <- airportToList) {
+					for (typeId <- airplaneTypeList) {
+						(Q.u + "INSERT INTO flighttime('idFromCity','idToCity','idAirplaneType','duration') VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + (duration.h+"") + ":" + (duration.m+"") + ":" + (duration.s+"") + "')").execute();
+					}
 				}
 			}
-		}
 	}
-	
+
 	////////////////////////////////////////////////////////////////////////////////
 	// AirplaneType /////////
 	////////////////////////////////////////////////////////////////////////////////
 
 	def insert(airplaneType: AirplaneType_data): Unit = {
-			//TODO 
 			(Q.u + "INSERT INTO airplanetype(`name`) VALUES ('" + airplaneType.name + "')").execute;
+	}
+
+	def getSeatNumbers(airplaneType: AirplaneType, seat:Seat_data) : List[Int] = {
+			var defaultSeatNumber = getSeatNumbers(airplaneType).max + 1;
+			var defaultAmount = 1;
+			var result = List[Int]();
+			seat match {
+			case Seat_data(Filled(number),_, _) => defaultSeatNumber = number;
+			}
+			seat match {
+			case Seat_data(_,Filled(amount), _) => defaultAmount = amount;
+			}
+			while(result.size != defaultAmount) {
+				result = (defaultSeatNumber + 1) :: result;
+				defaultSeatNumber = defaultSeatNumber + 1;
+			}
+			return result;
 	}
 
 	def addAirplaneType(airplaneType:AirplaneType_data, arrangement: List[Seat_data]) {
@@ -244,6 +260,19 @@ object Handler {
 				throw new AlreadyExistingAirplaneTypeException(airplaneType.name);
 
 			execute[AirplaneType_data](insert, airplaneType);
+
+			val ids = getAirplaneTypeIds(AirplaneType(Filled(airplaneType.name)));
+			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+							driver = "com.mysql.jdbc.Driver") withSession {
+				for(airplaneTypeId <- ids) {
+					for(seat <- arrangement) {
+					  getIds("Select idSeatType from SeatType where name='" + seat.seatType +"'").foreach(seatType =>
+						for(seatNumber <- getSeatNumbers(AirplaneType(Filled(airplaneType.name)), seat)) {
+							(Q.u + "INSERT INTO seat(`idSeatType`,`airplaneType`, `seatNumber`) VALUES ('" + (seatType+"") + "','" + (airplaneTypeId+"") + "','" + (seatNumber+"") + "')").execute;
+						});
+					}
+				}
+			}
 		}
 	}
 
@@ -387,6 +416,15 @@ object Handler {
 				result = getCodes("Select code from airport where " + select);
 			else
 				result = getCodes("Select code from airport");
+			return result;
+	}
+
+	def getSeatNumbers(airplaneType:AirplaneType) : List[Int] = {
+			var result = List[Int]();
+			val ids = getAirplaneTypeIds(airplaneType);
+			for(Id <- ids) {
+				result = getIds("Select seatNumber from seat where airplaneType='" + (Id+"") + "'") ::: result;
+			}
 			return result;
 	}
 
