@@ -208,32 +208,34 @@ object Handler {
 	}
 
 	def getAirplaneTypeIds(flightTime: FlightTime_data) : List[Int] = {
-		return getAirplaneTypeIds(flightTime.airplaneType);
-			return getAirplaneTypes(flightTime.airplaneType);
+			return getAirplaneTypeIds(flightTime.airplaneType);
 	}
 
 	def insert(flightTime: FlightTime_data) : Unit = {
-		val duration = flightTime.time;
-		duration match {
-		  case Time(Empty(),Empty(),Empty()) => throw new NoDurationException();		  
-		}
-		val airportFromList = getAirportFromIds(flightTime);
-		val airportToList = getAirportToIds(flightTime);
-		val airplaneTypeList = getAirplaneTypeIds(flightTime);
-		val durationString = createDurationString(duration);
-		for (fromId <- airportFromList) {
-			for (toId <- airportToList) {
-				for (typeId <- airplaneTypeList) {
+			val duration = flightTime.time;
+			duration match {
+			case Time(Empty(),Empty(),Empty()) => throw new NoDurationException();		  
+			}
 			val airportFromList = getAirportFromIds(flightTime);
 			val airportToList = getAirportToIds(flightTime);
 			val airplaneTypeList = getAirplaneTypeIds(flightTime);
-			val duration = flightTime.time;
+			val durationString = createDurationString(duration);
 			for (fromId <- airportFromList) {
 				for (toId <- airportToList) {
 					for (typeId <- airplaneTypeList) {
-						(Q.u + "INSERT INTO flighttime('idFromCity','idToCity','idAirplaneType','duration') VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + (duration.h+"") + ":" + (duration.m+"") + ":" + (duration.s+"") + "')").execute();
+						val airportFromList = getAirportFromIds(flightTime);
+						val airportToList = getAirportToIds(flightTime);
+						val airplaneTypeList = getAirplaneTypeIds(flightTime);
+						val duration = flightTime.time;
+						for (fromId <- airportFromList) {
+							for (toId <- airportToList) {
+								for (typeId <- airplaneTypeList) {
+									(Q.u + "INSERT INTO flighttime('idFromCity','idToCity','idAirplaneType','duration') VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + (duration.h+"") + ":" + (duration.m+"") + ":" + (duration.s+"") + "')").execute();
+								}
+								(Q.u + "INSERT INTO flighttime('idFromCity','idToCity','idAirplaneType','duration') VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')").execute();
+							}
+						}
 					}
-					(Q.u + "INSERT INTO flighttime('idFromCity','idToCity','idAirplaneType','duration') VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')").execute();
 				}
 			}
 	}
@@ -241,74 +243,74 @@ object Handler {
 	def addFlightTime(flightTime: FlightTime_data) {
 		execute[FlightTime_data](insert,flightTime);
 	}
-	
+
 	def isValidHours(duration: Time) : Boolean = {
-		var result = true;
-		duration match {
-		  case Time(Empty(),_,_) => 
-		  case Time(Filled(h),_,_) => result = (h >= 0 && h < 24)
-		}
-		return result;
+			var result = true;
+			duration match {
+			case Time(Empty(),_,_) => 
+			case Time(Filled(h),_,_) => result = (h >= 0 && h < 24)
+			}
+			return result;
 	}
-	
+
 	def isValidMinutes(duration: Time) : Boolean = {
-		var result = true;
-		duration match {
-		  case Time(_,Empty(),_) => 
-		  case Time(_,Filled(m),_) => result = (m >= 0 && m < 60)
-		}
-		return result;
+			var result = true;
+			duration match {
+			case Time(_,Empty(),_) => 
+			case Time(_,Filled(m),_) => result = (m >= 0 && m < 60)
+			}
+			return result;
 	}
-	
+
 	def isValidSeconds(duration: Time) : Boolean = {
-		var result = true;
-		duration match {
-		  case Time(_,_,Empty()) => 
-		  case Time(_,_,Filled(s)) => result = (s >= 0 && s < 60)
-		}
-		return result;
+			var result = true;
+			duration match {
+			case Time(_,_,Empty()) => 
+			case Time(_,_,Filled(s)) => result = (s >= 0 && s < 60)
+			}
+			return result;
 	}
-	
+
 	def isValidDuration(duration: Time) : Boolean = {
-		return (isValidHours(duration) && isValidMinutes(duration) && isValidSeconds(duration));
+			return (isValidHours(duration) && isValidMinutes(duration) && isValidSeconds(duration));
 	}
-	
+
 	def getDurationHours(duration: Time) : String = {
-		var result = "";
-		duration match {
-		  case Time(Empty(),_,_) => result = "00"
-		  case Time(Filled(h),_,_) => (if (h/10 == 0) {result = ("0"+h+"")} else {result = (h+"")})
-		}
-		return result;
+			var result = "";
+			duration match {
+			case Time(Empty(),_,_) => result = "00"
+			case Time(Filled(h),_,_) => (if (h/10 == 0) {result = ("0"+h+"")} else {result = (h+"")})
+			}
+			return result;
 	}
-	
+
 	def getDurationMinutes(duration: Time) : String = {
-		var result = "";
-		duration match {
-		  case Time(_,Empty(),_) => result = "00"
-		  case Time(_,Filled(m),_) => (if (m/10 == 0) {result = ("0"+m+"")} else {result = (m+"")})
-		}
-		return result;
+			var result = "";
+			duration match {
+			case Time(_,Empty(),_) => result = "00"
+			case Time(_,Filled(m),_) => (if (m/10 == 0) {result = ("0"+m+"")} else {result = (m+"")})
+			}
+			return result;
 	}
-	
+
 	def getDurationSeconds(duration: Time) : String = {
-	  var result = "";
-	  duration match {
-	    case Time(_,_,Empty()) => result = "00"
-	    case Time(_,_,Filled(s)) => (if (s/10 == 0) {result = ("0"+s+"")} else {result = (s+"")})
-	  }
-	  return result;
+			var result = "";
+			duration match {
+			case Time(_,_,Empty()) => result = "00"
+			case Time(_,_,Filled(s)) => (if (s/10 == 0) {result = ("0"+s+"")} else {result = (s+"")})
+			}
+			return result;
 	}
-	
+
 	def createDurationString(duration: Time) : String = {
-		if (!isValidDuration(duration)) {
-			throw new IllegalDurationException();
-		}
-		else {
-			return getDurationHours(duration) + ":" + getDurationMinutes(duration) + ":" + getDurationSeconds(duration);
-		}
+			if (!isValidDuration(duration)) {
+				throw new IllegalDurationException();
+			}
+			else {
+				return getDurationHours(duration) + ":" + getDurationMinutes(duration) + ":" + getDurationSeconds(duration);
+			}
 	}
-	
+
 	////////////////////////////////////////////////////////////////////////////////
 	// AirplaneType /////////
 	////////////////////////////////////////////////////////////////////////////////
@@ -318,7 +320,12 @@ object Handler {
 	}
 
 	def getSeatNumbers(airplaneType: AirplaneType, seat:Seat_data) : List[Int] = {
-			var defaultSeatNumber = getSeatNumbers(airplaneType).max + 1;
+			val list =  getSeatNumbers(airplaneType);
+			var defaultSeatNumber = 1;
+			if(list.size >= 1){
+				defaultSeatNumber =list.max + 1;
+			}
+
 			var defaultAmount = 1;
 			var result = List[Int]();
 			seat match {
@@ -328,16 +335,15 @@ object Handler {
 			case Seat_data(_,Filled(amount), _) => defaultAmount = amount;
 			}
 			while(result.size != defaultAmount) {
-				result = (defaultSeatNumber + 1) :: result;
+				result = defaultSeatNumber :: result;
 				defaultSeatNumber = defaultSeatNumber + 1;
 			}
 			return result;
 	}
 
 	def addAirplaneType(airplaneType:AirplaneType_data, arrangement: List[Seat_data]) {
-		//TODO handle list
 		if(airplaneType.name != null) {
-			if (!airplaneType.name.matches("[a-zA-Z]+"))
+			if (!airplaneType.name.matches("[a-zA-Z0-9]+"))
 				throw new IllegalAirplaneTypeNameException(airplaneType.name);
 
 			if (hasUniqueResult(select("count(*)", "airplanetype", "(name='" + airplaneType.name + "')")))
@@ -345,12 +351,12 @@ object Handler {
 
 			execute[AirplaneType_data](insert, airplaneType);
 
-			val ids = getAirplaneTypeIds(AirplaneType(Filled(airplaneType.name)));
 			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-							driver = "com.mysql.jdbc.Driver") withSession {
+					driver = "com.mysql.jdbc.Driver") withSession {
+				val ids = getAirplaneTypeIds(AirplaneType(Filled(airplaneType.name)));
 				for(airplaneTypeId <- ids) {
 					for(seat <- arrangement) {
-					  getIds("Select idSeatType from SeatType where name='" + seat.seatType +"'").foreach(seatType =>
+						getIds("Select idSeatType from SeatType where name='" + seat.seatType +"'").foreach(seatType =>
 						for(seatNumber <- getSeatNumbers(AirplaneType(Filled(airplaneType.name)), seat)) {
 							(Q.u + "INSERT INTO seat(`idSeatType`,`airplaneType`, `seatNumber`) VALUES ('" + (seatType+"") + "','" + (airplaneTypeId+"") + "','" + (seatNumber+"") + "')").execute;
 						});
@@ -409,7 +415,7 @@ object Handler {
 		if(name != null) {
 			if (!name.matches("[a-zA-Z]+"))
 				throw new IllegalSeatTypeException(name);
-			if(hasUniqueResult(select("name","SeatType","name='" + name + "'")))
+			if(hasUniqueResult(select("Count(*)","SeatType","name='" + name + "'")))
 				throw new AlreadyExistingSeatTypeException(name:String);
 
 			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
