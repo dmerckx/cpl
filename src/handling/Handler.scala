@@ -14,6 +14,8 @@ case class Count(nr: Int);
 case class Id(id: Int);
 case class Code(id:String);
 
+case class TemplateId(idAirline: String, idTemplate: Int);
+
 object Handler {
 
 	/**
@@ -50,6 +52,12 @@ object Handler {
 		case AddDist(distance) => addDist(distance);
 
 		//FLIGHTTIME
+
+		//Flight
+		case AddFlight(flight) => addFlight(flight);
+		case AddFlight2(flight, prices) => addFlight2(flight, prices);
+		case ChangeFlight(flightFrom, flightTo) => changeFlight(flightFrom, flightTo);
+		case RemoveFlight(flight) => removeFlight(flight);
 		}
 	}
 
@@ -435,13 +443,87 @@ object Handler {
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
-	// Dist /////////
+	// Flight /////////
 	////////////////////////////////////////////////////////////////////////////////
 
+	def addFlight(Flight:Flight_data) {
+
+	}
+
+	def addFlight2(Flight:Flight_data, prices: List[SeatInstance_data]) {
+
+	}
+
+	def changeFlight(flightSelector:Flight, changeFlight:Flight_change) {
+
+	}
+
+	def removeFlight(flightSelector:Flight) {
+
+	}
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Database ////////////
 	////////////////////////////////////////////////////////////////////////////////	
+
+	def getTemplateIds(template:Template) : List[TemplateId] = {
+			var result = List[TemplateId]();
+			var airlineIds = List[String]();
+			var flnVal = "";
+			var airportFromIds = List[String]();
+			var airportToIds = List[String]();
+			var airplaneTypeIds = List[Int]();
+			template match {
+			case Template(Filled(airline),_,_,_,_) => airlineIds = getAirlineIds(airline);
+			case Template(_,Filled(fln),_,_,_) => flnVal = fln;
+			case Template(_,_,Filled(from),_,_) => airportFromIds = getAirportIds(from);
+			case Template(_,_,_,Filled(to),_) => airportFromIds = getAirportIds(to);
+			case Template(_,_,_,_,Filled(airplaneType)) => airplaneTypeIds = getAirplaneTypeIds(airplaneType);
+			}
+			
+			var select = "";
+			select+= addOr(airlineIds,"idAirline");
+			select+= addOr(airportFromIds,"idAirportFrom");
+			select+= addOr(airportToIds,"idAirportTo");
+			select+= addOr(airplaneTypeIds.asInstanceOf[List[Integer]],"idAirplaneType");
+			
+			if(!flnVal.equals("")) {
+				select += addAnd(select);
+				//TODO parse fln
+			}
+
+			if(!select.equals(""))
+				result = getTemplateIds("Select idAirline,idTemplate from template where " + select);
+			else
+				result = getTemplateIds("Select idAirline,idTemplate from template");
+			return result;
+	}
+
+	
+	def addAnd(string:String) : String = {
+	  var result = "";
+	  if(!string.equals(""))
+			result = string + " and ";
+	  return result;
+	}
+	
+	def addOr(list:List[Object], name:String) : String = {
+	  var result = "";
+	  if(list.size >= 1) {
+		  		result += addAnd(result);
+				result +="(";
+				list.foreach(attribute => result += (name + "='" + attribute + "' or "));
+				result = result.substring(0, result.length()-4); //remove last "or"
+				result +=")";
+			}
+	  return result;
+	}
+	
+	def getAirlineIds(airline:Airline) : List[String] = {
+			var result = List[String]();
+			//TODO
+			return result;
+	}
 
 	def getCityIds(city:City) : List[Int] = {
 			var cityName ="";
@@ -583,6 +665,13 @@ object Handler {
 			return result;
 	}
 
+	implicit val getTemplateIdResult = GetResult(r => TemplateId(r.nextString,r.nextInt));
+	def getTemplateIds(query:String) : List[TemplateId] = {
+			var result = List[TemplateId]();
+			Q.queryNA[TemplateId](query).foreach( r => result = r :: result);
+			return result;
+	}
+	
 	def select(select: String, from: String, where: String): String = {
 			return "select " + select + " from " + from + " where " + where;
 	}
