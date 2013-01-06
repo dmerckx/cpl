@@ -62,7 +62,7 @@ case class Dist(from:Opt[Airport], to:Opt[Airport], dist:Opt[Int]) extends Type;
 case class Dist_data(from:Airport, to:Airport, dist:Int) extends Type;
 //## Basic Operations
 case class AddDist(data:Dist_data) extends Operation
-case class ChangeDistTo(distSelector:Dist, distChange:Dist) extends Operation
+case class ChangeDistTo(distSelector:Dist) extends Operation
 case class RemoveDist(distSelector:Dist) extends Operation
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
