@@ -208,20 +208,95 @@ object Handler {
 	}
 	
 	def getAirplaneTypeIds(flightTime: FlightTime_data) : List[Int] = {
-		return getAirplaneTypes(flightTime.airplaneType);
+		return getAirplaneTypeIds(flightTime.airplaneType);
 	}
 	
 	def insert(flightTime: FlightTime_data) : Unit = {
+		val duration = flightTime.time;
+		duration match {
+		  case Time(Empty(),Empty(),Empty()) => throw new NoDurationException();		  
+		}
 		val airportFromList = getAirportFromIds(flightTime);
 		val airportToList = getAirportToIds(flightTime);
 		val airplaneTypeList = getAirplaneTypeIds(flightTime);
-		val duration = flightTime.time;
+		val durationString = createDurationString(duration);
 		for (fromId <- airportFromList) {
 			for (toId <- airportToList) {
 				for (typeId <- airplaneTypeList) {
-					(Q.u + "INSERT INTO flighttime('idFromCity','idToCity','idAirplaneType','duration') VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + (duration.h+"") + ":" + (duration.m+"") + ":" + (duration.s+"") + "')").execute();
+					(Q.u + "INSERT INTO flighttime('idFromCity','idToCity','idAirplaneType','duration') VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')").execute();
 				}
 			}
+		}
+	}
+	
+	def addFlightTime(flightTime: FlightTime_data) {
+		execute[FlightTime_data](insert,flightTime);
+	}
+	
+	def isValidHours(duration: Time) : Boolean = {
+		var result = true;
+		duration match {
+		  case Time(Empty(),_,_) => 
+		  case Time(Filled(h),_,_) => result = (h >= 0 && h < 24)
+		}
+		return result;
+	}
+	
+	def isValidMinutes(duration: Time) : Boolean = {
+		var result = true;
+		duration match {
+		  case Time(_,Empty(),_) => 
+		  case Time(_,Filled(m),_) => result = (m >= 0 && m < 60)
+		}
+		return result;
+	}
+	
+	def isValidSeconds(duration: Time) : Boolean = {
+		var result = true;
+		duration match {
+		  case Time(_,_,Empty()) => 
+		  case Time(_,_,Filled(s)) => result = (s >= 0 && s < 60)
+		}
+		return result;
+	}
+	
+	def isValidDuration(duration: Time) : Boolean = {
+		return (isValidHours(duration) && isValidMinutes(duration) && isValidSeconds(duration));
+	}
+	
+	def getDurationHours(duration: Time) : String = {
+		var result = "";
+		duration match {
+		  case Time(Empty(),_,_) => result = "00"
+		  case Time(Filled(h),_,_) => (if (h/10 == 0) {result = ("0"+h+"")} else {result = (h+"")})
+		}
+		return result;
+	}
+	
+	def getDurationMinutes(duration: Time) : String = {
+		var result = "";
+		duration match {
+		  case Time(_,Empty(),_) => result = "00"
+		  case Time(_,Filled(m),_) => (if (m/10 == 0) {result = ("0"+m+"")} else {result = (m+"")})
+		}
+		return result;
+	}
+	
+	def getDurationSeconds(duration: Time) : String = {
+	  var result = "";
+	  duration match {
+	    case Time(_,_,Empty()) => result = "00"
+	    case Time(_,_,Filled(s)) => (if (s/10 == 0) {result = ("0"+s+"")} else {result = (s+"")})
+	  }
+	  return result;
+	}
+	
+	def createDurationString(duration: Time) : String = {
+		if (!isValidDuration(duration)) {
+			throw new IllegalDurationException();
+		}
+		else {
+			return getDurationHours(duration) + ":" + getDurationMinutes(duration) + ":" + getDurationSeconds(duration);
 		}
 	}
 	

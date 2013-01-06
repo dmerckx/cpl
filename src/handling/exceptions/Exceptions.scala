@@ -37,6 +37,10 @@ case class AlreadyExistingSeatTypeException(name:String) extends Exception
 //DISTANCE
 case class IllegalDistanceException(dist:Int) extends Exception
 
+//FLIGHTTIME
+case class NoDurationException() extends Exception
+case class IllegalDurationException() extends Exception
+
 class Exceptions {
 
 }
