@@ -41,6 +41,9 @@ case class IllegalDistanceException(dist:Int) extends Exception
 case class NoDurationException() extends Exception
 case class IllegalDurationException() extends Exception
 
+//TEMPLATE
+case class IllegalFLNException(fln: String) extends Exception
+
 class Exceptions {
 
 }
