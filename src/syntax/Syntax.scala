@@ -103,7 +103,7 @@ case class AddAirplaneType(data:AirplaneType_data, seats:List[Seat_data]) extend
 /*
  * ADD AIRPLANE TYPE {
  * 		name: "Boeing 706"
- * } ADD SEATS [
+ * } WITH SEATS [
  * 		{ type: business, amt: 100 },
  * 		{ type: first, amt: 50 },
  * 		{ type: economy, amt: 200 },
@@ -128,48 +128,50 @@ case class RemoveAirplaneType(airplaneTypeSelector:AirplaneType) extends Operati
 //## Types
 // We want seatType to correspond to "type" in our language syntax.
 //## Basic operations
-case class AddSeat(airplaneTypeSelector:AirplaneType, data:Seat_data) extends Operation
+//ADD SEAT ALSO PROVIDED
 case class AddSeats(airplaneTypeSelector:AirplaneType, data:List[Seat_data]) extends Operation
 /* 
- * CHANGE AIRPLANE TYPE	{
- * 		name: "Boeing 707"
- * } ADD SEATS [{
+ * ADD SEATS [{
  * 		type: business,
  * 		amt: 100
- * }]
+ * }] TO AIRPLANE TYPE {
+ * 		name: "Boeing 707"
+ * }
  */
-case class ChangeSeat(airplaneTypeSelector:AirplaneType, seatSelector:Seat, seatChange:Seat) extends Operation
+//CHANGE SEAT ALSO PROVIDED
 case class ChangeSeats(airplaneTypeSelector:AirplaneType, seatSelector:List[Seat], seatChange:Seat) extends Operation
 /* 
- * CHANGE AIRPLANE TYPE {
- * 		name: "Boeing 707"
- * } CHANGE SEATS [
+ * CHANGE SEATS [
  *		{ number: 101 },
  * 		{ number: 250 },
  * 		{ type: first }
- * ] TO {
+ * ] OF AIRPLANE TYPE {
+ * 		name: "Boeing 707"
+ * } TO {
  * 		type: business
  * }
  */
 
 // Corresponds to removal of all seats followed by adding the list in data.
+//CHANGE SEAT ALSO PROVIDED
 case class ChangeSeatsTo(airplaneTypeSelector:AirplaneType, data:List[Seat_data]) extends Operation
 /* 
- * CHANGE AIRPLANE TYPE {
+ * CHANGE SEATS OF AIRPLANE TYPE {
  * 		name: "Boeing 707"
- * } CHANGE SEATS TO [
+ * } TO [
  *		{ amt: 100, type: business }
  * 		{ amt: 150, type: economy }
  * 		{ amt: 50 , type: first}
  * ]
  */
-case class RemoveSeats(seatSelectors:List[Seat]) extends Operation
-case class RemoveSeat(seatSelector:Seat) extends Operation
-/* 
- * CHANGE AIRPLANE TYPE	{ name: "Boeing 707"
- * } REMOVE SEAT {
+//REMOVE SEAT ALSO PROVIDED
+case class RemoveSeats(airplaneTypeSelector:AirplaneType, seatSelectors:List[Seat]) extends Operation
+/*
+ * REMOVE SEAT {
  * 		type: business
- * }
+ * } FROM AIRPLANE TYPE {
+ * 		name: "Boeing 707"
+ * } 
  */
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
