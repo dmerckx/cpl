@@ -12,6 +12,15 @@ object TestJonathan {
   implicit val getCountResult = GetResult(r => Count(r.nextInt));
   def count(query : String) : Int = {
     val q = Q.queryNA[Count](query);
+    try {
+    	return q.first.nr;
+    } catch {
+    	case _: NoSuchElementException => return 0;
+    }
+  }
+  
+  def realCount(fromWhere : String) : Int = {
+    val q = Q.queryNA[Count]("SELECT count(*) " + fromWhere);
     return q.first.nr;
   }
   

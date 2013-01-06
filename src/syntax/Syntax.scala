@@ -47,7 +47,7 @@ case class RemoveCity(citySelector:City) extends Operation
 ////////////////////////////////////////////////////////////////////////////////
 // For example queries: see City
 //## Types
-case class Airport(name: Opt[String], city: Opt[City], short: Opt[String]) extends Type
+case class Airport(city: Opt[City], name: Opt[String], short: Opt[String]) extends Type
 case class Airport_data(city:City, name:String, short:String) extends Type
 //## Basic Operations
 case class AddAirport(data:Airport_data) extends Operation
@@ -61,11 +61,11 @@ case class RemoveAirport(airportSelector:Airport) extends Operation
 // Distance ///////////
 // For example queries: see City
 //## Types
-case class Dist(from:Opt[City], to:Opt[City], dist:Opt[Int]) extends Type;
-case class Dist_data(from:City, to:City, dist:Int) extends Type;
+case class Dist(from:Opt[Airport], to:Opt[Airport], dist:Opt[Int]) extends Type;
+case class Dist_data(from:Airport, to:Airport, dist:Int) extends Type;
 //## Basic Operations
 case class AddDist(data:Dist_data) extends Operation
-case class ChangeDistTo(distSelector:Dist, distChange:Dist) extends Operation
+case class ChangeDistTo(distSelector:Dist, changedDist:Dist) extends Operation 
 case class RemoveDist(distSelector:Dist) extends Operation
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -75,11 +75,11 @@ case class RemoveDist(distSelector:Dist) extends Operation
 ////////////////////////////////////////////////////////////////////////////////
 // For example queries: see City
 //## Types
-case class FlightTime(from:Opt[City], to:Opt[City], airplaneType: Opt[AirplaneType], duration: Opt[Time]) extends Type;
-case class FlightTime_data(from:City, to:City, airplaneType:AirplaneType, time:Time) extends Type;
+case class FlightTime(from:Opt[Airport], to:Opt[Airport], airplaneType: Opt[AirplaneType], time: Opt[Time]) extends Type;
+case class FlightTime_data(from:Airport, to:Airport, airplaneType:AirplaneType, time:Time) extends Type;
 //## Basic Operations
 case class AddFlightTime(data:FlightTime_data) extends Operation
-case class ChangeFlightTime(flightTimeSelector:FlightTime, flightTimeChanges:FlightTime) extends Operation
+case class ChangeFlightTime(flightTimeSelector:FlightTime, changedFlightTime:FlightTime) extends Operation
 case class RemoveFlightTime(flightTimeSelector:FlightTime) extends Operation
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,19 +89,29 @@ case class RemoveFlightTime(flightTimeSelector:FlightTime) extends Operation
 // AirplaneType ///////
 //## Types
 case class AirplaneType(name:Opt[String]) extends Type;
-case class AirplaneType_data(name:String, arrangement:List[Seat_data]) extends Type;
+case class AirplaneType_data(name:String) extends Type;
+case class Seat(number:Opt[Int], seatType:Opt[String]) extends Type;
+	// Number specifies the seat number.
+	//		The default value of the seat number is [highest seat number in airplane type so far] + 1
+	// Amt specifies the amount of seats created.
+	//		If number is 10 and amt 10, we create seats with numbers 10 to 19.
+	//		The default value of amt is 1.
+	// type specifies the seat type
+case class Seat_data(number:Opt[Int], amt:Opt[Int], seatType:String) extends Type;
+
+
 //## Basic operations
-case class AddAirplaneType(data:AirplaneType_data) extends Operation
+
+case class AddAirplaneType(data:AirplaneType_data, seats:List[Seat_data]) extends Operation
 /*
  * ADD AIRPLANE TYPE {
  * 		name: "Boeing 706"
- * 		arrangement: [
- * 			{ type: business, amt: 100 },
- * 			{ type: first, amt: 50 },
- * 			{ type: economy, amt: 200 },
- * 			{ number: 1000, type: business }
- * 		]
- }
+ * } WITH SEATS [
+ * 		{ type: business, amt: 100 },
+ * 		{ type: first, amt: 50 },
+ * 		{ type: economy, amt: 200 },
+ * 		{ number: 1000, type: business }
+ * ]
  */ 
 case class ChangeAirplaneType(airplaneTypeSelector:AirplaneType, airplaneType:AirplaneType) extends Operation
 /*
@@ -120,56 +130,51 @@ case class RemoveAirplaneType(airplaneTypeSelector:AirplaneType) extends Operati
 // Seat ///////////////
 //## Types
 // We want seatType to correspond to "type" in our language syntax.
-case class Seat(number:Opt[Int], seatType:Opt[String]) extends Type;
-// Number specifies the seat number.
-//		The default value of the seat number is [highest seat number in airplane type so far] + 1
-// Amt specifies the amount of seats created.
-//		If number is 10 and amt 10, we create seats with numbers 10 to 19.
-//		The default value of amt is 1.
-// type specifies the seat type
-case class Seat_data(number:Opt[Int], amt:Opt[Int], seatType:String) extends Type;
 //## Basic operations
-case class AddSeat(airplaneTypeSelector:AirplaneType, data:List[Seat_data]) extends Operation
+//ADD SEAT ALSO PROVIDED
+case class AddSeats(airplaneTypeSelector:AirplaneType, data:List[Seat_data]) extends Operation
 /* 
- * CHANGE AIRPLANE TYPE	{
- * 		name: "Boeing 707"
- * } ADD SEAT {
+ * ADD SEATS [{
  * 		type: business,
  * 		amt: 100
+ * }] TO AIRPLANE TYPE {
+ * 		name: "Boeing 707"
  * }
  */
-
+//CHANGE SEAT ALSO PROVIDED
 case class ChangeSeats(airplaneTypeSelector:AirplaneType, seatSelector:List[Seat], seatChange:Seat) extends Operation
 /* 
- * CHANGE AIRPLANE TYPE {
- * 		name: "Boeing 707"
- * } CHANGE SEATS [
+ * CHANGE SEATS [
  *		{ number: 101 },
  * 		{ number: 250 },
  * 		{ type: first }
- * ] TO {
+ * ] OF AIRPLANE TYPE {
+ * 		name: "Boeing 707"
+ * } TO {
  * 		type: business
  * }
  */
 
 // Corresponds to removal of all seats followed by adding the list in data.
+//CHANGE SEAT ALSO PROVIDED
 case class ChangeSeatsTo(airplaneTypeSelector:AirplaneType, data:List[Seat_data]) extends Operation
 /* 
- * CHANGE AIRPLANE TYPE {
+ * CHANGE SEATS OF AIRPLANE TYPE {
  * 		name: "Boeing 707"
- * } CHANGE SEATS TO [
+ * } TO [
  *		{ amt: 100, type: business }
  * 		{ amt: 150, type: economy }
  * 		{ amt: 50 , type: first}
  * ]
  */
-
-case class RemoveSeat(seatSelector:Seat) extends Operation
-/* 
- * CHANGE AIRPLANE TYPE	{ name: "Boeing 707"
- * } REMOVE SEAT {
+//REMOVE SEAT ALSO PROVIDED
+case class RemoveSeats(airplaneTypeSelector:AirplaneType, seatSelectors:List[Seat]) extends Operation
+/*
+ * REMOVE SEAT {
  * 		type: business
- * }
+ * } FROM AIRPLANE TYPE {
+ * 		name: "Boeing 707"
+ * } 
  */
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -209,44 +214,46 @@ case class RemoveAirline(airlineCompanySelector:Airline) extends Operation
 // Template ///////////
 //## Types
 case class Template(
+    airline: Opt[Airline],
     fln: Opt[String],
-    airline: Opt[String],
-	from: Opt[City],
-	to: Opt[City],
+	from: Opt[Airport],
+	to: Opt[Airport],
+	airplaneType: Opt[AirplaneType]) extends Type;
+case class Template_change(
+    fln: Opt[String],
+	from: Opt[Airport],
+	to: Opt[Airport],
 	airplaneType: Opt[AirplaneType]) extends Type;
 case class Template_data(
     fln: String,
-	from: City,
-	to: City,
-	airplaneType: AirplaneType,
-	prices: List[SeatInstance_data],
-	periods: List[Period_data]) extends Type;
+	from: Airport,
+	to: Airport,
+	airplaneType: AirplaneType) extends Type;
 //## Basic operations
-case class AddTemplate(data:Template_data) extends Operation
+case class AddTemplate(data:Template_data, 	prices: List[SeatInstance_data], periods: List[Period_data]) extends Operation
 /* 
  * ADD TEMPLATE {
  * 		fln: ABC300,
  *		from: {name: Brussels},
  *		to: {name: "New York"},
- *		airplaneType: {name: "Boeing 007"},
- *		prices: [
- *			{ type: business, price: { dollar: 100 } },
- *			{ type: economy, price: { dollar: 50 } },
- *			{ number: 465, price: { dollar: 0 } },
- *			{ number: 50, amt: 50, price: { dollar: 500 } }
- *		]
- *		periods: [{
- * 			day: monday,
- *			departure: {h: 12, m: 0}
- *		},{
- * 			day: tuesday,
- *			from: {d: 28, m: 12, y: 1990},
- *			to: {d: 28, m: 12, y: 1991}
- *			departure: {h: 12}
- *		}]
+ *		airplaneType: {name: "Boeing 007"}
+ * } WITH SEAT INSTANCES [
+ *		{ type: business, price: { dollar: 100 } },
+ *		{ type: economy, price: { dollar: 50 } },
+ *		{ number: 465, price: { dollar: 0 } },
+ *		{ number: 50, amt: 50, price: { dollar: 500 } }
+ * ] AND WITH PERIODS [{
+ * 		day: monday,
+ *		departure: {h: 12, m: 0}
+ *	},{
+ * 		day: tuesday,
+ *		from: {d: 28, m: 12, y: 1990},
+ *		to: {d: 28, m: 12, y: 1991}
+ *		departure: {h: 12}
+ *	}]
  */
 
-case class ChangeTemplate(selectorTemplate:Template, changeTemplate:Template) extends Operation
+case class ChangeTemplate(selectorTemplate:Template, changeTemplate:Template_change) extends Operation
 
 case class RemoveTemplate(selectorTemplate:Template) extends Operation
 ////////////////////////////////////////////////////////////////////////////////
@@ -275,11 +282,15 @@ case class Flight3(
     arrival: Opt[DateTime],
     airplaneType: Opt[AirplaneType],
     duringInterval: TimePeriod) extends Flight;
+case class Flight_change( // Flight_change is like Flight but doesn't have duringInterval 
+    template: Opt[Template],
+    departure: Opt[DateTime],
+    arrival: Opt[DateTime],
+    airplaneType: Opt[AirplaneType]) extends Flight;
 case class Flight_data(
     template: Template,
     departure: DateTime,
     arrival: Opt[DateTime],
-    prices: Opt[List[SeatInstance_data]],
     airplaneType: Opt[AirplaneType]) extends Type;
 
 case class AddFlight(data:Flight_data) extends Operation;
@@ -292,7 +303,9 @@ case class AddFlight(data:Flight_data) extends Operation;
  * 			time: { h: 12, m: 4 }
  * 		}
  * }
- * 
+ */
+case class AddFlight2(data:Flight_data, prices:List[SeatInstance_data]) extends Operation;
+/* 
  * # Add flight using nondefault values
  * ADD FLIGHT {
  * 		template: { fln : ABC007 },
@@ -302,17 +315,17 @@ case class AddFlight(data:Flight_data) extends Operation;
  * 		},
  * 		arrival: {
  * 			date: { d: 4, m: 1, y: 2013 },
- * 			time: { h: 14, m: 8 } }
+ * 			time: { h: 14, m: 8 }
  * 		},
- * 		prices: [
- * 			{ type: economy, price: { dollar: 100 } },
- * 			{ type: first, price { dollar: 500, cent: 10 } }
- * 		],
  * 		airplaneType: { name: "Boeing 007" }
+ * } WITH SEAT INSTANCES [
+ * 		{ type: economy, price: { dollar: 100 } },
+ * 		{ type: first, price { dollar: 500, cent: 10 } }
+ * 	]
  * }
  */
 
-case class ChangeFlight(selectorFlight:Flight, changeFlight:Flight) extends Operation;
+case class ChangeFlight(selectorFlight:Flight, changeFlight:Flight_change) extends Operation;
 /*
  * CHANGE FLIGHT {
  * 		template: { fln : ABC007 },
@@ -349,23 +362,23 @@ case class Period_data(
     weekday:Opt[String],
     startTime:Time) extends Type;
 //# Operations
-case class AddTemplatePeriod(selectorTemplate: Template, period:List[Period_data]) extends Operation;
+case class AddTemplatePeriods(selectorTemplate: Template, periods:List[Period_data]) extends Operation;
 /*
- * CHANGE TEMPLATE {
- * 		fln: XAB300
- * } ADD PERIOD [{ 
+ * ADD PERIODS [{ 
  * 		from : {d: 1, m: 1, y:1990},
  * 		to: {d: 31, m: 12, y:1990},
  * 		weekday: monday,
  * 		startTime: {h: 13}
- * }]
- */
-case class ChangeTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period, changePeriod:Period) extends Operation;
-/*
- * CHANGE TEMPLATE {
+ * }] TO TEMPLATE {
  * 		fln: XAB300
- * } CHANGE PERIOD {
+ * }
+ */
+case class ChangeTemplatePeriods(selectorTemplate: Template, selectorPeriods:List[Period], changePeriod:Period) extends Operation;
+/*
+ * CHANGE PERIOD {
  * 		contained: {day: {d: 28, m: 12, y:1990}}
+ * } OF TEMPLATE {
+ * 		fln: XAB300
  * } TO	{
  * 		from : {d: 1, m: 1, y: 1990},
  * 		to: {d: 31, m: 12, y: 1990},
@@ -373,23 +386,23 @@ case class ChangeTemplatePeriod(selectorTemplate: Template, selectorPeriod:Perio
  * 		startTime: {h: 13}
  * 	}
  */
-case class ChangeTemplatePeriods(selectorTemplate: Template, periods:List[Period_data]) extends Operation;
+case class ChangeTemplatePeriodsTo(selectorTemplate: Template, periods:List[Period_data]) extends Operation;
 /*
- * CHANGE TEMPLATE {
+ * CHANGE PERIODS OF TEMPLATE {
  * 		fln: XAB300
- * } CHANGE PERIODS TO [{
+ * } TO [{
  * 		from : {d: 1, m: 1, y: 1990},
  * 		to: {d: 31, m: 12, y: 1990},
  * 		weekday: monday,
  * 		startTime: {h: 13}
  * 	}]
  */
-case class RemoveTemplatePeriod(selectorTemplate: Template, selectorPeriod:Period) extends Operation;
+case class RemoveTemplatePeriods(selectorTemplate: Template, selectorPeriods:List[Period]) extends Operation;
 /*
- * CHANGE TEMPLATE {
- * 		fln: XAB300
- * } REMOVE PERIOD {
+ * REMOVE PERIODS [{
  * 		contained: {day: {d: 28, m: 12, y: 1990} }
+ * }] FROM TEMPLATE {
+ * 		fln: XAB300
  * }
  */
 
@@ -405,6 +418,7 @@ sealed abstract class SeatInstance extends Type;
 case class SeatNumberInstances(number: Int, amt: Opt[Int]) extends SeatInstance
 case class SeatTypeInstances(seatType: String) extends SeatInstance
 
+//CHANGE INSTANCE syntax is er nog
 case class ChangeTemplateSeatInstances(
     templateSelector:Template,
     seatInstanceSelectors:List[SeatInstance],
@@ -419,19 +433,24 @@ case class ChangeTemplateSeatInstances(
  * 		seatNumber: 1000, price: { dollar: 100 }
  * }
  */
+//CHANGE SEAT INSTANCE syntax is er nog
 case class ChangeTemplateSeatInstancesTo(
     templateSelector:Template,
     seatInstances:List[SeatInstance_data]) extends Operation
 /*
- * CHANGE TEMPLATE {
+ * CHANGE SEAT INSTANCES OF TEMPLATE {
  * 		airline : "ABC"
- * } CHANGE SEAT INSTANCES TO [ 
+ * } TO [ 
  * 		{ type: business, price: { dollar: 100 } },
  * 		{ type: economy, price: { dollar: 50 } },
  * 		{ type: first, price: { dollar: 75 } },
  * 		{ number: 100, amt: 2, price: { dollar: 0 } }
  * 	]
  */
+case class ChangeFlightSeatInstance(
+    flightSelector:Flight,
+    seatInstanceSelectors:SeatInstance,
+    seatInstances:SeatInstance_data) extends Operation
 case class ChangeFlightSeatInstances(
     flightSelector:Flight,
     seatInstanceSelectors:List[SeatInstance],
@@ -440,15 +459,13 @@ case class ChangeFlightSeatInstancesTo(
     flightSelector:Flight,
     seatInstances:List[SeatInstance_data]) extends Operation
 /*
- * CHANGE FLIGHT {
- * 
+ * CHANGE SEAT INSTANCES OF FLIGHT {
  * 		template: { airline: "ABC" },
  * 		during : {
  * 			from : {d: 1, m: 1, y: 2013},
  * 			to: {d: 31, m: 21, y: 2013}
  * 		}
- * } CHANGE SEAT INSTANCES TO {
+ * } TO {
  * 		price : { dollar : 0 }
  * }
  */
-
