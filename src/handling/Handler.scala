@@ -12,6 +12,7 @@ import handling.exceptions._
 
 case class Count(nr: Int);
 case class Id(id: Int);
+case class Code(id:String);
 
 object Handler {
 
@@ -308,19 +309,19 @@ object Handler {
 	////////////////////////////////////////////////////////////////////////////////	
 
 	def getCityIds(city:City) : List[Int] = {
-	  var cityName ="";
-	  var result = List[Int]();
-		city match {
-		  case City(Filled(name)) => cityName = name;
-		  case City(Empty()) => //donothing
-		}
-		
-		if(!cityName.equals("")) {
-		  result = getIds("SELECT idCity FROM CITY WHERE (city.name='" + cityName +"')") ::: result;
-		}
-		return result;
+			var cityName ="";
+			var result = List[Int]();
+			city match {
+			case City(Filled(name)) => cityName = name;
+			case City(Empty()) => //donothing
+			}
+
+			if(!cityName.equals("")) {
+				result = getIds("SELECT idCity FROM CITY WHERE (city.name='" + cityName +"')") ::: result;
+			}
+			return result;
 	}
-	
+
 	def getCityName(airport:Airport_data) : String =  {
 			var cityName = "";
 			airport match {
@@ -329,19 +330,50 @@ object Handler {
 			}
 			return cityName;
 	}
-	
-	def getAirportIds(airport:Airport) : List[Int] = {
-	  var airportName ="";
-	  var airportShort = "";
-	  var airportCities = List[Int]();
-//	  airport match {
-//	    case Airport(City(Filled(city)), Filled(name), Filled(short)) => (airportName = name, airportShort = short)
-//	  }
-	  var result = List[Int]();
-	  
-	  return result;
+
+	def getAirportIds(airport:Airport) : List[String] = {
+			var airportName ="";
+			var airportShort = "";
+			var airportCities = List[Int]();
+			airport match {
+			case Airport(Filled(city), Filled(name), Filled(short)) => (airportName = name, airportShort = short, airportCities = getCityIds(city));
+			case Airport(Filled(city),Filled(name),Empty()) => (airportName = name, airportCities = getCityIds(city));
+			case Airport(Filled(city),Empty(), Filled(short)) => (airportShort = short, airportCities = getCityIds(city));
+			case Airport(Empty(),Filled(name), Filled(short)) =>(airportName = name, airportShort = short);
+			case Airport(Filled(city),Empty(), Empty()) => (airportCities = getCityIds(city));
+			case Airport(Empty(), Filled(name), Empty()) => (airportName = name);
+			case Airport(Empty(), Empty(), Filled(short)) => (airportShort = short);
+			case Airport(Empty(),Empty(),Empty()) => //match all
+			}
+			var result = List[String]();
+			var select = "";
+			if(!airportName.equals("")) {
+			  select += "name='";
+			  select += airportName + "'";
+			}
+			if(!airportShort.equals("")) {
+			  if(!select.equals(""))
+			    select+= " and ";
+			  select += "code='";
+			  select += airportShort + "'";
+			}
+			
+			if(airportCities.length >= 1) {
+			  if(!select.equals(""))
+			    select+= " and ";
+			  select+="("
+			  airportCities.foreach(id => select += "city='" + id +"' or " );
+			  select = select.substring(0, select.length()-4); //remove last "or"
+			  select+=")";
+			}
+			println(select);
+			if(!select.equals(""))
+			  result = getCodes("Select code from airport where " + select);
+			else
+			  result = getCodes("Select code from airport");
+			return result;
 	}
-	
+
 	def execute[Type](func: (Type => Unit), data: Type) {
 		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
 				driver = "com.mysql.jdbc.Driver") withSession {
@@ -381,9 +413,16 @@ object Handler {
 
 	implicit val getIdResult = GetResult(r => Id(r.nextInt));
 	def getIds(query:String) : List[Int] = {
-	  var result = List[Int]();
-		Q.queryNA[Id](query).foreach( r => result = r.id :: result);
-		return result;
+			var result = List[Int]();
+			Q.queryNA[Id](query).foreach( r => result = r.id :: result);
+			return result;
+	}
+	
+	implicit val getCodeResult = GetResult(r => Code(r.nextString));
+	def getCodes(query:String) : List[String] = {
+			var result = List[String]();
+			Q.queryNA[Code](query).foreach( r => result = r.id :: result);
+			return result;
 	}
 
 	def select(select: String, from: String, where: String): String = {
