@@ -34,6 +34,9 @@ case class IllegalAirlineCodeException(short:String) extends Exception
 case class IllegalSeatTypeException(name:String) extends Exception
 case class AlreadyExistingSeatTypeException(name:String) extends Exception
 
+//DISTANCE
+case class IllegalDistanceException(dist:Int) extends Exception
+
 class Exceptions {
 
 }
