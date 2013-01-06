@@ -169,12 +169,12 @@ object Handler {
 	// Distances /////////
 	////////////////////////////////////////////////////////////////////////////////
 	
-	def getAirportFromIds(dist: Dist_data) : List[Int] = {
-		getAirportIds(dist.from);
+	def getAirportFromIds(dist: Dist_data) : List[String] = {
+		return getAirportIds(dist.from);
 	}
 	
-	def getAirportToIds(dist: Dist_data) : List[Int] = {
-		getAirportIds(dist.to);
+	def getAirportToIds(dist: Dist_data) : List[String] = {
+		return getAirportIds(dist.to);
 	}
 	
 	def insert(dist: Dist_data) : Unit = {
@@ -182,7 +182,7 @@ object Handler {
 		val airportToList = getAirportToIds(dist);
 		for(idFrom <- airportFromList) {
 			for(idTo <- airportToList) {
-				(Q.u + "INSERT INTO distance('idFromCity','idToCity','distance') VALUES ('" + (idFrom + "") + "','" + (idTo + "") + "','" + (dist.dist+"") + "')").execute();
+				(Q.u + "INSERT INTO distance('idFromCity','idToCity','distance') VALUES ('" + idFrom + "','" + idTo + "','" + (dist.dist+"") + "')").execute();
 			}
 		}
 	}
@@ -193,7 +193,21 @@ object Handler {
 		}
 		execute[Dist_data](insert, dist);
 	}
-
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// FlightTimes /////////
+	////////////////////////////////////////////////////////////////////////////////
+	
+	def getAirportFromIds(flightTime: FlightTime_data) : List[String] = {
+		return getAirportIds(flightTime.from);
+	}
+	
+	def getAirportNoIds(flightTime: FlightTime_data) : List[String] = {
+		return getAirportIds(flightTime.to); 
+	}
+	
+	
+	
 	////////////////////////////////////////////////////////////////////////////////
 	// AirplaneType /////////
 	////////////////////////////////////////////////////////////////////////////////
