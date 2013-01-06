@@ -20,6 +20,19 @@ case class NotAllowedAirportName(arg:String) extends Exception
 case class NotAllowedAirportCode(arg:String) extends Exception
 //case class NotAllowedAirportCode(arg:String) extends Exception
 
+//AIRPLANETYPE
+case class IllegalAirplaneTypeNameException(name:String) extends Exception
+case class AlreadyExistingAirplaneTypeException(name:String) extends Exception
+
+//AIRLINE
+case class IllegalAirlineNameException(name:String) extends Exception
+case class AlreadyExistingAirlineNameException(name:String) extends Exception
+case class AlreadyExistingAirlineCodeException(short:String) extends Exception
+case class IllegalAirlineCodeException(short:String) extends Exception
+
+//SEATTYPE
+case class IllegalSeatTypeException(name:String) extends Exception
+case class AlreadyExistingSeatTypeException(name:String) extends Exception
 
 class Exceptions {
 

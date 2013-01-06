@@ -1,26 +1,6 @@
 package handling
 
-import syntax.Operation
-import syntax.Type
-
-//Opt syntax
-import syntax.Empty
-import syntax.Filled
-
-// City imports (types & operations)
-import syntax.AddCity
-import syntax.City_data
-import syntax.City
-import syntax.ChangeCity
-import syntax.RemoveCity
-
-// Airport imports (types & operations)
-import syntax.AddAirport
-import syntax.ChangeAirport
-import syntax.RemoveAirport
-import syntax.Airport
-import syntax.Airport_data
-
+import syntax._
 //Database
 import scala.slick.session.Database
 import Database.threadLocalSession
@@ -48,6 +28,22 @@ object Handler {
 		case AddAirport(airport) => addAirport(airport);
 		case ChangeAirport(airportFrom, airportTo) => changeAirport(airportFrom, airportTo);
 		case RemoveAirport(airport) => removeAirport(airport);
+
+		//AIRPLANETYPE
+		case AddAirplaneType(airplaneType , arrangement) => addAirplaneType(airplaneType, arrangement);
+		case ChangeAirplaneType(airplaneTypeFrom, airplaneTypeTo) => changeAirplaneType(airplaneTypeFrom, airplaneTypeTo);
+		case RemoveAirplaneType(airplaneType) => removeAirplaneType(airplaneType);
+
+		//AIRLINE
+		case AddAirline(airline) => addAirline(airline);
+		case ChangeAirline(airlineFrom, airlineTo) => changeAirline(airlineFrom, airlineTo) ;
+		case RemoveAirline(airline) => removeAirline(airline);
+
+		//SEATTYPE
+		case AddSeatType(seatType) => addSeatType(seatType);
+		case RemoveSeatType(seatType) => removeSeatType(seatType);
+		case ChangeSeatType(from, to) => changeSeatType(from, to);
+
 		}
 	}
 
@@ -134,8 +130,8 @@ object Handler {
 	def getCityName(airport:Airport_data) : String =  {
 			var cityName = "";
 			airport match {
-				case Airport_data(City(Filled(city)), name, short) => cityName = city;
-				case Airport_data(City(Empty()), name, short) => //nothing
+			case Airport_data(City(Filled(city)), name, short) => cityName = city;
+			case Airport_data(City(Empty()), name, short) => //nothing
 			}
 			return cityName;
 	}
@@ -166,12 +162,108 @@ object Handler {
 	}
 
 	def removeAirport(airport: Airport) {
-
+		//TODO
 	}
 
 	def changeAirport(airportFrom: Airport,airportTo: Airport) {
+		//TODO
+	}
+
+
+	////////////////////////////////////////////////////////////////////////////////
+	// AirplaneType /////////
+	////////////////////////////////////////////////////////////////////////////////
+
+	def insert(airplaneType: AirplaneType_data): Unit = {
+			//TODO 
+			(Q.u + "INSERT INTO airplanetype(`name`) VALUES ('" + airplaneType.name + "')").execute;
+	}
+
+	def addAirplaneType(airplaneType:AirplaneType_data, arrangement: List[Seat_data]) {
+		//TODO handle list
+		if(airplaneType.name != null) {
+			if (!airplaneType.name.matches("[a-zA-Z]+"))
+				throw new IllegalAirplaneTypeNameException(airplaneType.name);
+
+			if (hasUniqueResult(select("count(*)", "airplanetype", "(name='" + airplaneType.name + "')")))
+				throw new AlreadyExistingAirplaneTypeException(airplaneType.name);
+
+			execute[AirplaneType_data](insert, airplaneType);
+		}
+	}
+
+	def changeAirplaneType(airplaneFrom:AirplaneType, airplaneTo:AirplaneType) {
 
 	}
+
+	def removeAirplaneType(airplane:AirplaneType) {
+
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Airline /////////
+	////////////////////////////////////////////////////////////////////////////////
+
+	def insert(airline: Airline_data): Unit = {
+			(Q.u + "INSERT INTO Airline(`name`, `idAirline`) VALUES ('" + airline.name + "','" + airline.short+ "')").execute;
+	}
+
+	def addAirline(airline:Airline_data) {
+		if(airline.name != null) {
+			if (!airline.name.matches("[a-zA-Z]+"))
+				throw new IllegalAirlineNameException(airline.name);
+			if(airline.short.length() > 3 || airline.short.length() == 0 )
+				throw new IllegalAirlineCodeException(airline.short);
+			if (hasUniqueResult(select("count(*)", "airline", "(name='" + airline.name + "')")))
+				throw new AlreadyExistingAirlineNameException(airline.name);
+			if (hasUniqueResult(select("count(*)", "airline", "(name='" + airline.short + "')")))
+				throw new AlreadyExistingAirlineCodeException(airline.short);
+
+			execute[Airline_data](insert, airline);
+		}
+	}
+
+	def changeAirline(airlineFrom:Airline, airlineTo:Airline) {
+		//TODO
+	}
+
+	def removeAirline(airline:Airline) {
+		//TODO
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// SeatType /////////
+	////////////////////////////////////////////////////////////////////////////////
+
+	def insert(name:String) = (Q.u + "INSERT INTO SEATTYPE(`name`) VALUES ('" + name + "')").execute;
+
+	def addSeatType(name:String) {
+		if(name != null) {
+			if (!name.matches("[a-zA-Z]+"))
+				throw new IllegalSeatTypeException(name);
+			if(hasUniqueResult(select("name","SeatType","name='" + name + "'")))
+				throw new AlreadyExistingSeatTypeException(name:String);
+
+			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+					driver = "com.mysql.jdbc.Driver") withSession {
+				insert(name);
+			}
+		}
+	}
+
+
+	def removeSeatType(name:String) {
+		//TODO
+	}
+
+	def changeSeatType(seatTypeFrom: String, seatTypeTo:String) {
+		//TODO
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Dist /////////
+	////////////////////////////////////////////////////////////////////////////////
+
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Database ////////////
@@ -213,13 +305,13 @@ object Handler {
 			val q = Q.queryNA[Count](query);
 			return q.first.nr;
 	}
-	
+
 	implicit val getIdResult = GetResult(r => Id(r.nextInt));
 	def getId(query:String) : Int = {
-		val q = Q.queryNA[Id](query);
-		return q.first.id;
+			val q = Q.queryNA[Id](query);
+			return q.first.id;
 	}
-	
+
 	def select(select: String, from: String, where: String): String = {
 			return "select " + select + " from " + from + " where " + where;
 	}
