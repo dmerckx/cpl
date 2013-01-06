@@ -19,7 +19,7 @@ case class TimePeriod(from:DateTime, to:DateTime) extends Type;
 // City ///////////////
 ////////////////////////////////////////////////////////////////////////////////
 //## Types
-case class City(id:Opt[Int], name:Opt[String]) extends Type;
+case class City(name:Opt[String]) extends Type;
 case class City_change(name:Opt[String]) extends Type;
 case class City_data(name:String) extends Type;
 //## Basic Operations
