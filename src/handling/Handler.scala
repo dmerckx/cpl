@@ -21,11 +21,11 @@ object Handler {
 	 */
 	def handle(op: Operation) = {
 		op match {
-		//CITY
+			//CITY
 		case AddCity(data) => addCity(data);
 		case ChangeCity(city, to) => changeCity(city, to);
 		case RemoveCity(city) => removeCity(city);
-		
+
 		//AIRPORT
 		case AddAirport(airport) => addAirport(airport);
 		case ChangeAirport(airportFrom, airportTo) => changeAirport(airportFrom, airportTo);
@@ -45,10 +45,10 @@ object Handler {
 		case AddSeatType(seatType) => addSeatType(seatType);
 		case RemoveSeatType(seatType) => removeSeatType(seatType);
 		case ChangeSeatType(from, to) => changeSeatType(from, to);
-		
+
 		//DISTANCE
 		case AddDist(distance) => addDist(distance);
-		
+
 		//FLIGHTTIME
 		}
 	}
@@ -165,46 +165,46 @@ object Handler {
 	def changeAirport(airportFrom: Airport,airportTo: Airport) {
 		//TODO
 	}
-	
+
 	////////////////////////////////////////////////////////////////////////////////
 	// Distances /////////
 	////////////////////////////////////////////////////////////////////////////////
-	
+
 	def getAirportFromIds(dist: Dist_data) : List[String] = {
-		return getAirportIds(dist.from);
+			return getAirportIds(dist.from);
 	}
-	
+
 	def getAirportToIds(dist: Dist_data) : List[String] = {
-		return getAirportIds(dist.to);
+			return getAirportIds(dist.to);
 	}
-	
+
 	def insert(dist: Dist_data) : Unit = {
-		val airportFromList = getAirportFromIds(dist);
-		val airportToList = getAirportToIds(dist);
-		for(idFrom <- airportFromList) {
-			for(idTo <- airportToList) {
-				(Q.u + "INSERT INTO distance('idFromCity','idToCity','distance') VALUES ('" + idFrom + "','" + idTo + "','" + (dist.dist+"") + "')").execute();
+			val airportFromList = getAirportFromIds(dist);
+			val airportToList = getAirportToIds(dist);
+			for(idFrom <- airportFromList) {
+				for(idTo <- airportToList) {
+					(Q.u + "INSERT INTO distance('idFromCity','idToCity','distance') VALUES ('" + idFrom + "','" + idTo + "','" + (dist.dist+"") + "')").execute();
+				}
 			}
-		}
 	}
-	
+
 	def addDist(dist: Dist_data) {
 		if (dist.dist <= 0) {
 			throw new IllegalDistanceException(dist.dist);
 		}
 		execute[Dist_data](insert, dist);
 	}
-	
+
 	////////////////////////////////////////////////////////////////////////////////
 	// FlightTimes /////////
 	////////////////////////////////////////////////////////////////////////////////
-	
+
 	def getAirportFromIds(flightTime: FlightTime_data) : List[String] = {
-		return getAirportIds(flightTime.from);
+			return getAirportIds(flightTime.from);
 	}
-	
+
 	def getAirportToIds(flightTime: FlightTime_data) : List[String] = {
-		return getAirportIds(flightTime.to); 
+			return getAirportIds(flightTime.to); 
 	}
 	
 	def getAirplaneTypeIds(flightTime: FlightTime_data) : List[Int] = {
@@ -364,29 +364,43 @@ object Handler {
 			var result = List[String]();
 			var select = "";
 			if(!airportName.equals("")) {
-			  select += "name='";
-			  select += airportName + "'";
+				select += "name='";
+				select += airportName + "'";
 			}
 			if(!airportShort.equals("")) {
-			  if(!select.equals(""))
-			    select+= " and ";
-			  select += "code='";
-			  select += airportShort + "'";
+				if(!select.equals(""))
+					select+= " and ";
+				select += "code='";
+				select += airportShort + "'";
 			}
-			
+
 			if(airportCities.length >= 1) {
-			  if(!select.equals(""))
-			    select+= " and ";
-			  select+="("
-			  airportCities.foreach(id => select += "city='" + id +"' or " );
-			  select = select.substring(0, select.length()-4); //remove last "or"
-			  select+=")";
+				if(!select.equals(""))
+					select+= " and ";
+				select+="("
+						airportCities.foreach(id => select += "city='" + id +"' or " );
+				select = select.substring(0, select.length()-4); //remove last "or"
+				select+=")";
 			}
 			println(select);
 			if(!select.equals(""))
-			  result = getCodes("Select code from airport where " + select);
+				result = getCodes("Select code from airport where " + select);
 			else
-			  result = getCodes("Select code from airport");
+				result = getCodes("Select code from airport");
+			return result;
+	}
+
+	def getAirplaneTypeIds(airplaneType:AirplaneType) : List[Int] = {
+			var name = "";
+			airplaneType match {
+			case AirplaneType(Filled(airplaneTypeName)) => name = airplaneTypeName;
+			case AirplaneType(Empty()) => 
+			}
+			var result = List[Int]();
+			if(!name.equals(""))
+				result = getIds("Select idAirplaneType from airplaneType where name='" + name + "'");
+			else
+				result = getIds("Select idAirplaneType from airplaneType");
 			return result;
 	}
 
@@ -433,7 +447,7 @@ object Handler {
 			Q.queryNA[Id](query).foreach( r => result = r.id :: result);
 			return result;
 	}
-	
+
 	implicit val getCodeResult = GetResult(r => Code(r.nextString));
 	def getCodes(query:String) : List[String] = {
 			var result = List[String]();
