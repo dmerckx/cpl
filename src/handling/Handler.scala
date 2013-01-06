@@ -235,7 +235,6 @@ object Handler {
 					val query = "INSERT INTO flighttime(`idFromCity`,`idToCity`,`idAirplaneType`,`duration`) VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')";
 					println(query);
 					(Q.u + query).execute();			
-					(Q.u + query).execute();
 				}
 			}
 		}
