@@ -44,6 +44,7 @@ case class IllegalDurationException() extends Exception
 //TEMPLATE
 case class IllegalFLNException(fln: String) extends Exception
 case class NoSuchAirlineException(id: String) extends Exception
+case class NoSuchWeekdayException(day: String) extends Exception
 
 class Exceptions {
 }

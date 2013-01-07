@@ -100,6 +100,7 @@ case class Seat(number:Opt[Int], seatType:Opt[String]) extends Type;
 	//		If number is 10 and amt 10, we create seats with numbers 10 to 19.
 	//		The default value of amt is 1.
 	// type specifies the seat type
+case class Seat_remove(number:Opt[Int], amt:Opt[Int], seatType:Opt[String]) extends Type;
 case class Seat_data(number:Opt[Int], amt:Opt[Int], seatType:String) extends Type;
 
 
@@ -171,7 +172,7 @@ case class ChangeSeatsTo(airplaneTypeSelector:AirplaneType, data:List[Seat_data]
  * ]
  */
 //REMOVE SEAT ALSO PROVIDED
-case class RemoveSeats(airplaneTypeSelector:AirplaneType, seatSelectors:List[Seat]) extends Operation
+case class RemoveSeats(airplaneTypeSelector:AirplaneType, seatSelectors:List[Seat_remove]) extends Operation
 /*
  * REMOVE SEAT {
  * 		type: business
