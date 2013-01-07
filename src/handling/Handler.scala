@@ -10,11 +10,14 @@ import Q.interpolation
 //Exceptions
 import handling.exceptions._
 
+import java.util.HashMap
+
 case class Count(nr: Int);
 case class Id(id: Int);
 case class Code(id:String);
 
 case class TemplateId(idAirline: String, idTemplate: Int);
+case class Duration(duration:java.sql.Time);
 
 object Handler {
 
@@ -220,24 +223,24 @@ object Handler {
 	}
 
 	def insert(flightTime: FlightTime_data) : Unit = {
-		val duration = flightTime.time;
-		duration match {
-		  case Time(Empty(),Empty(),Empty()) => throw new NoDurationException();
-		  case _ => 
-		}
-		val airportFromList = getAirportFromIds(flightTime);
-		val airportToList = getAirportToIds(flightTime);
-		val airplaneTypeList = getAirplaneTypeIds(flightTime);
-		val durationString = createDurationString(duration);
-		for (fromId <- airportFromList) {
-			for (toId <- airportToList) {
-				for (typeId <- airplaneTypeList) {
-					val query = "INSERT INTO flighttime(`idFromCity`,`idToCity`,`idAirplaneType`,`duration`) VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')";
-					println(query);
-					(Q.u + query).execute();			
+			val duration = flightTime.time;
+			duration match {
+			case Time(Empty(),Empty(),Empty()) => throw new NoDurationException();
+			case _ => 
+			}
+			val airportFromList = getAirportFromIds(flightTime);
+			val airportToList = getAirportToIds(flightTime);
+			val airplaneTypeList = getAirplaneTypeIds(flightTime);
+			val durationString = createDurationString(duration);
+			for (fromId <- airportFromList) {
+				for (toId <- airportToList) {
+					for (typeId <- airplaneTypeList) {
+						val query = "INSERT INTO flighttime(`idFromCity`,`idToCity`,`idAirplaneType`,`duration`) VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')";
+						println(query);
+						(Q.u + query).execute();			
+					}
 				}
 			}
-		}
 	}	
 
 	def addFlightTime(flightTime: FlightTime_data) {
@@ -314,49 +317,49 @@ object Handler {
 	////////////////////////////////////////////////////////////////////////////////
 	// Template /////////
 	////////////////////////////////////////////////////////////////////////////////
-	
+
 	def getAirportFromIds(template: Template_data) : List[String] = {
-		return getAirportIds(template.from);
+			return getAirportIds(template.from);
 	}
 
 	def getAirportToIds(template: Template_data) : List[String] = {
-		return getAirportIds(template.to); 
+			return getAirportIds(template.to); 
 	}
-	
+
 	def getAirplaneTypeIds(template: Template_data) : List[Int] = {
-		return getAirplaneTypeIds(template.airplaneType);
+			return getAirplaneTypeIds(template.airplaneType);
 	}
-	
+
 	def getAirlineIdFromFLN(fln: String) : String = {
-		var result = fln.substring(0,3);
-		if (fln.substring(2,3).matches("[0-9]")) {
-			return fln.substring(0,2);
-		}
-		else {
-			return result;
-		}
+			var result = fln.substring(0,3);
+			if (fln.substring(2,3).matches("[0-9]")) {
+				return fln.substring(0,2);
+			}
+			else {
+				return result;
+			}
 	}
-	
+
 	def getTemplateIdFromFLN(fln: String) : String = {
-		val flnLength = fln.length();
-		var result = fln.substring(flnLength - 4, flnLength);
-		if (fln.substring(flnLength - 4, flnLength - 3).matches("[A-Z]")) {
-			return fln.substring(flnLength - 3, flnLength);
-		}
-		else {
-			return result;
-		}
+			val flnLength = fln.length();
+			var result = fln.substring(flnLength - 4, flnLength);
+			if (fln.substring(flnLength - 4, flnLength - 3).matches("[A-Z]")) {
+				return fln.substring(flnLength - 3, flnLength);
+			}
+			else {
+				return result;
+			}
 	}
-	
+
 	def isValidFLN(fln: String) : Boolean = {
-		if (!fln.matches("[A-Z]{2-3}[0-9]{3-4}")) {
-			return false;
-		}
-		else {
-			return true;
-		}
+			if (!fln.matches("[A-Z]{2-3}[0-9]{3-4}")) {
+				return false;
+			}
+			else {
+				return true;
+			}
 	}
-	
+
 	def insert(template: Template_data,prices: List[SeatInstance_data], periods: List[Period_data]) {
 		val airportFromList = getAirportFromIds(template);
 		val airportToList = getAirportToIds(template);
@@ -367,17 +370,17 @@ object Handler {
 		}
 		val airlineId = getAirlineIdFromFLN(fln);
 		val templateId = getTemplateIdFromFLN(fln);
-		
+
 		for (fromId <- airportFromList) {
 			for (toId <- airportToList) {
 				for (typeId <- airplaneTypeList) {
-					
+
 				}
 			}
 		}
 	}
 
-	
+
 	////////////////////////////////////////////////////////////////////////////////
 	// AirplaneType /////////
 	////////////////////////////////////////////////////////////////////////////////
@@ -505,10 +508,33 @@ object Handler {
 	// Flight /////////
 	////////////////////////////////////////////////////////////////////////////////
 
-	def addFlight(Flight:Flight_data) {
-
+	def addFlight(flight:Flight_data) {
+//	  var map = new HashMap[String,java.sql.Time]();
+//	  var arrivalTime = null;
+//	  flight match {
+//	    case Flight_data(_,_,Filled(arrival),_) => arrivalTime = toDateTime(arrival);
+//	  }
+//	  getTemplateIds(flight.template).foreach(id => 
+//		map.put((id.idAirline + id.idTemplate),getDuration("Select duration from (template join flighttime on (idAirportFrom=idFromAirport and idAirportTo=idToAirport)) where (idAirline='"+ id.idAirline + "' and idTemplate='" + id.idTemplate + "'"))); 
+	}
+	
+	def toDateTime(dateTime: DateTime) : java.sql.Timestamp = {
+	  return null;
+	}
+	
+	def getArrivalTime(template:Template) : DateTime = {
+//	  //TODO determine arrival data, either it is filled in in the data, else it has to be retrieved from the corresponding template
+//	  template match {
+//	    case Flight_data(_,_,Filled(arrivalTime),_) => return arrivalTime;
+//	    case Flight_data(_,_,Empty(),_) => return calculateArrivalFromTemplate(flight)
+//	  }
+	  return null;
 	}
 
+	def calculateArrival(template:Template) : DateTime = {
+	  return null;
+	}
+	
 	def addFlight2(Flight:Flight_data, prices: List[SeatInstance_data]) {
 
 	}
@@ -536,21 +562,22 @@ object Handler {
 			case Template(Filled(airline),_,_,_,_) => airlineIds = getAirlineIds(airline);
 			case Template(_,Filled(fln),_,_,_) => flnVal = fln;
 			case Template(_,_,Filled(from),_,_) => airportFromIds = getAirportIds(from);
-			case Template(_,_,_,Filled(to),_) => airportFromIds = getAirportIds(to);
+			case Template(_,_,_,Filled(to),_) => airportToIds = getAirportIds(to);
 			case Template(_,_,_,_,Filled(airplaneType)) => airplaneTypeIds = getAirplaneTypeIds(airplaneType);
 			}
-			
+
 			var select = "";
 			select+= addOr(airlineIds,"idAirline");
 			select+= addOr(airportFromIds,"idAirportFrom");
 			select+= addOr(airportToIds,"idAirportTo");
 			select+= addOr(airplaneTypeIds.asInstanceOf[List[Integer]],"idAirplaneType");
-			
+
 			if(!flnVal.equals("")) {
 				select += addAnd(select);
-				//TODO parse fln
+				select += "idAirline='" + getAirlineIdFromFLN(flnVal) + "'";
+				select = select + addAnd(select);
+				select += "idTemplate='" + getTemplateIdFromFLN(flnVal) + "'";
 			}
-
 			if(!select.equals(""))
 				result = getTemplateIds("Select idAirline,idTemplate from template where " + select);
 			else
@@ -558,29 +585,46 @@ object Handler {
 			return result;
 	}
 
-	
+
 	def addAnd(string:String) : String = {
-	  var result = "";
-	  if(!string.equals(""))
-			result = string + " and ";
-	  return result;
+			var result = "";
+			if(!string.equals(""))
+				result = " and ";
+			return result;
 	}
-	
+
 	def addOr(list:List[Object], name:String) : String = {
-	  var result = "";
-	  if(list.size >= 1) {
-		  		result += addAnd(result);
+			var result = "";
+			if(list.size >= 1) {
+				result += addAnd(result);
 				result +="(";
 				list.foreach(attribute => result += (name + "='" + attribute + "' or "));
 				result = result.substring(0, result.length()-4); //remove last "or"
 				result +=")";
 			}
-	  return result;
+			return result;
 	}
-	
+
 	def getAirlineIds(airline:Airline) : List[String] = {
 			var result = List[String]();
-			//TODO
+			var name ="";
+			var id = "";
+			airline match {
+			case Airline(_,Filled(airlineName)) => name = airlineName;
+			case Airline(Filled(idAirline),_) => id = idAirline;
+			}
+			var where ="";
+			if(!name.equals("")) {
+				where += "name='" + name + "'";
+			}
+			if(!id.equals("")) {
+				where += addAnd(where);
+				where += "idAirline='" + id +"'"; 
+			}
+			if(!where.equals(""))
+				result = getCodes("select idAirline from airline where " + where);
+			else
+				result = getCodes("select idAirline from airline");
 			return result;
 	}
 
@@ -630,7 +674,7 @@ object Handler {
 			if(!airportShort.equals("")) {
 				if(!select.equals(""))
 					select+= " and ";
-				select += "code='";
+				select += "idAirport='";
 				select += airportShort + "'";
 			}
 
@@ -644,9 +688,9 @@ object Handler {
 			}
 			println(select);
 			if(!select.equals(""))
-				result = getCodes("Select code from airport where " + select);
+				result = getCodes("Select idAirport from airport where " + select);
 			else
-				result = getCodes("Select code from airport");
+				result = getCodes("Select idAirport from airport");
 			return result;
 	}
 
@@ -731,6 +775,12 @@ object Handler {
 			return result;
 	}
 	
+	implicit val getDurationResult = GetResult(r => Duration(r.nextTime()));
+	def getDuration(query:String) : java.sql.Time = {
+			val q = Q.queryNA[Duration](query);
+			return q.first.duration;
+	}
+
 	def select(select: String, from: String, where: String): String = {
 			return "select " + select + " from " + from + " where " + where;
 	}
