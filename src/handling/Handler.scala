@@ -18,6 +18,7 @@ case class Code(id:String);
 
 case class TemplateId(idAirline: String, idTemplate: Int);
 case class Duration(duration:java.sql.Time);
+case class SeatNumber(nr: Int);
 
 object Handler {
 
@@ -360,111 +361,176 @@ object Handler {
 			}
 	}
 
-	def insert(template: Template_data,prices: List[SeatInstance_data], periods: List[Period_data]) {
+	def insert(template: Template_data, prices:List[SeatInstance_data], periods: List[Period_data]) {
 		val airportFromList = getAirportFromIds(template);
+		if(airportFromList.size > 1) 
+			throw new NonUniqueFromAirport();
+		if(airportFromList.size == 0)
+			throw new NoSuchFromAirport();
+
 		val airportToList = getAirportToIds(template);
+		if(airportToList.size > 1)
+			throw new NonUniqueToAirport();
+		if(airportToList.size == 0) 
+			throw new NoSuchToAirport();
+
 		val airplaneTypeList = getAirplaneTypeIds(template);
+		if(airplaneTypeList.size > 1)
+			throw new NonUniqueAirplaneType();
+		if(airplaneTypeList.size == 0)
+			throw new NoSuchAirplaneType();
+
 		val fln = template.fln;
-		if (!isValidFLN(fln)) {
+		if (!isValidFLN(fln)) 
 			throw new IllegalFLNException(fln)
-		}
+
 		val airlineId = getAirlineIdFromFLN(fln);
 		val templateId = getTemplateIdFromFLN(fln);
-		if (!isExistingAirline(airlineId)) {
-			throw new NoSuchAirlineException(airlineId);
-		}		
+		if (!isExistingAirline(airlineId))
+			throw new NoSuchAirlineException(airlineId)		
 
-		for (fromId <- airportFromList) {
-			for (toId <- airportToList) {
-				for (typeId <- airplaneTypeList) {
-					var query = "INSERT INTO template(`idAirline`,`idTemplate`,`idAirplaneType`,`idAirportFrom`,`idAirportTo`) VALUES('" + airlineId + "','" + templateId + "','" + typeId + "','" + fromId + "','" + toId + "')";
-					(Q.u + query).execute();
-					for (period <- periods) {
-						val templateIdInt = Integer.parseInt(templateId);
-						var periodQuery = getPeriodQuery(period,airlineId,templateIdInt);
-						(Q.u + periodQuery).execute();
-					}
+		val fromId = airportFromList.head;
+		val toId = airportToList.head;
+		val typeId = airplaneTypeList.head;
 
-				}
+		var query = "INSERT INTO template(`idAirline`,`idTemplate`,`idAirplaneType`,`idAirportFrom`,`idAirportTo`) VALUES('" + airlineId + "','" + templateId + "','" + typeId + "','" + fromId + "','" + toId + "')";
+		(Q.u + query).execute();
+
+		for (period <- periods) {
+			val templateIdInt = Integer.parseInt(templateId);
+			var periodQuery = getPeriodQuery(period,airlineId,templateIdInt);
+			(Q.u + periodQuery).execute();
+		}
+		for (price <- prices) {
+			var priceVal = extractPrice(price);
+			extractSeatNumbers(price, template.airplaneType).foreach(seatNb => "insert into seatinstancetemplate(`idAirline`,`idTemplate`,`seatnumber`,`idAirplanetype`,`price`) values ('" + airlineId + "','" + templateId + "','" + seatNb + "','" + typeId + "','" + priceVal +"'")
+		}
+	}
+
+	def extractPrice(seatInstance:SeatInstance_data) : Double = {
+			var price: Price = Dollar(Filled(0),Filled(0));
+	seatInstance match {
+		case SeatNumberInstances_data(_,_,priceVal) => price = priceVal;
+		case SeatTypeInstances_data(_,priceVal) => price = priceVal;
+	}
+	var result = 0d;
+	price match {
+		case Dollar(Filled(dollar), Filled(cent)) => result = dollar + cent/100;
+		case Dollar(Empty(), Filled(cent)) => result = cent/100;
+		case Dollar(Filled(dollar), Empty()) => result = dollar;
+		case Euro(Filled(euro), Empty()) => result = toDollar(euro);
+		case Euro(Empty(), Filled(cent)) => result = toDollar(cent/100);
+		case Euro(Filled(euro), Filled(cent)) => result = toDollar(euro + cent/100);
+		case _ =>
+	}
+		return result;
+	}
+
+	def toDollar(amount:Double) : Double = {
+	  return amount*1.3;
+	}
+	
+	def extractSeatNumbers(seat:SeatInstance_data, airplaneType:AirplaneType) : List[Int] = {
+			seat match {
+			case SeatNumberInstances_data(number,Filled(amt),price) => return getSeatNumbers(airplaneType,Seat_data(Filled(number),Filled(amt),""));
+			case SeatNumberInstances_data(number,Empty(),price) => return getSeatNumbers(airplaneType,Seat_data(Filled(number),Empty(),""));
+			case SeatTypeInstances_data(seatType,price) => return getSeatNumbers(airplaneType, seatType);
 			}
-		}
 	}
-	
+
+
 	def getDateString(date: Date) : String = {
-		var days = "";
-		var months = "";
-		var years = "";
-		date match {
-		  case Date(d,_,_) => (if (d/10 == 0) {days = "0" + (d+"")} else {days = (d+"")})
-		  case Date(_,m,_) => (if (m/10 == 0) {months = "0" + (m+"")} else {months = (m+"")})
-		  case Date(_,_,y) => years = (y+"")
-		}
-		return years + "-" + months + "-" + days;
+			var days = "";
+			var months = "";
+			var years = "";
+			date match {
+			case Date(d,_,_) => (if (d/10 == 0) {days = "0" + (d+"")} else {days = (d+"")})
+			case _ => 
+			}
+			date match {
+			case Date(_,m,_) => (if (m/10 == 0) {months = "0" + (m+"")} else {months = (m+"")})
+			case _ =>
+			}
+			date match {
+			case Date(_,_,y) => years = (y+"")
+			case _ =>
+			}
+			return years + "-" + months + "-" + days;
 	}
-	
+
 	def getWeekdayInt(day: String) : Int = {
-	  if (day.equals("monday")) {
-	    return 1;
-	  }
-	  if (day.equals("tuesday")) {
-	    return 2;
-	  }
-	  if (day.equals("wednesday")) {
-	    return 3;
-	  }
-	  if (day.equals("thurdsday")) {
-	    return 4;
-	  }
-	  if (day.equals("friday")) {
-	    return 5;
-	  }
-	  if (day.equals("saturday")) {
-	    return 6;
-	  }
-	  if (day.equals("sunday")) {
-	    return 7;
-	  }
-	  throw new NoSuchWeekdayException(day);
+			if (day.equals("monday")) {
+				return 1;
+			}
+			if (day.equals("tuesday")) {
+				return 2;
+			}
+			if (day.equals("wednesday")) {
+				return 3;
+			}
+			if (day.equals("thurdsday")) {
+				return 4;
+			}
+			if (day.equals("friday")) {
+				return 5;
+			}
+			if (day.equals("saturday")) {
+				return 6;
+			}
+			if (day.equals("sunday")) {
+				return 7;
+			}
+			throw new NoSuchWeekdayException(day);
 	}
-	
+
 	def getPeriodQuery(period: Period_data, airlineId: String, templateId: Int) : String = {
-		var dateFromString = "";
-		var dateToString = "";
-		var weekday = 0;
-		var timeString = "";
-		period match {
-		  case Period_data(Filled(Date(d,m,y)),_,_,_) => dateFromString = getDateString(Date(d,m,y))
-		  case Period_data(_,Filled(Date(d,m,y)),_,_) => dateToString = getDateString(Date(d,m,y))
-		  case Period_data(_,_,Filled(d),_) => weekday = getWeekdayInt(d)
-		  case Period_data(_,_,_,t) => timeString = createDurationString(t)
-		}
-		var variablesString = "(`idAirline`,`idTemplate`";
-		var valuesString = "('" + airlineId + "','" + templateId + "'";
-		if (!dateFromString.equals("")) {
-		  variablesString = variablesString + ",`fromDate`";
-		  valuesString = ",'" + dateFromString + "'";		  
-		}
-		if (!dateToString.equals("")) {
-		  variablesString = variablesString + ",`toDate`";
-		  valuesString = ",'" + dateToString + "'";
-		}
-		if (weekday != 0) {
-		  variablesString = variablesString + ",`day`";
-		  valuesString = ",'" + weekday + "'";
-		}
-		variablesString = variablesString + ",`flightStartTime`)";
-		valuesString = ",'" + timeString + "')";
-		var query = "INSERT INTO period" + variablesString + "VALUES" + valuesString;
-		return query;
+			var dateFromString = "";
+			var dateToString = "";
+			var weekday = 0;
+			var timeString = "";
+			period match {
+			case Period_data(Filled(Date(d,m,y)),_,_,_) => dateFromString = getDateString(Date(d,m,y))
+			case _ =>
+			}
+			period match {
+			case Period_data(_,Filled(Date(d,m,y)),_,_) => dateToString = getDateString(Date(d,m,y))
+			case _ => 
+			}
+			period match {
+			case Period_data(_,_,Filled(d),_) => weekday = getWeekdayInt(d)
+			case _ =>
+			}
+			period match {
+			case Period_data(_,_,_,t) => timeString = createDurationString(t)
+			case _ =>
+			}
+			var variablesString = "(`idAirline`,`idTemplate`";
+			var valuesString = "('" + airlineId + "','" + templateId + "'";
+			if (!dateFromString.equals("")) {
+				variablesString = variablesString + ",`fromDate`";
+				valuesString = ",'" + dateFromString + "'";		  
+			}
+			if (!dateToString.equals("")) {
+				variablesString = variablesString + ",`toDate`";
+				valuesString = ",'" + dateToString + "'";
+			}
+			if (weekday != 0) {
+				variablesString = variablesString + ",`day`";
+				valuesString = ",'" + weekday + "'";
+			}
+			variablesString = variablesString + ",`flightStartTime`)";
+			valuesString = ",'" + timeString + "')";
+			var query = "INSERT INTO period" + variablesString + "VALUES" + valuesString;
+			return query;
 	}
-	
+
 	def isExistingAirline(airlineId: String) : Boolean = {
-	  if (hasUniqueResult(select("count(*)", "airline","idAirline='" + airlineId + "'"))) {
-	    return true
-	  } 
-	  else {
-	    return false;
-	  }
+			if (hasUniqueResult(select("count(*)", "airline","idAirline='" + airlineId + "'"))) {
+				return true
+			} 
+			else {
+				return false;
+			}
 	}
 
 
@@ -476,20 +542,26 @@ object Handler {
 			(Q.u + "INSERT INTO airplanetype(`name`) VALUES ('" + airplaneType.name + "')").execute;
 	}
 
-	def getSeatNumbers(airplaneType: AirplaneType, seat:Seat_data) : List[Int] = {
+	def getInitialSeatNumber(airplaneType:AirplaneType) : Int = {
 			val list =  getSeatNumbers(airplaneType);
 			var defaultSeatNumber = 1;
 			if(list.size >= 1){
 				defaultSeatNumber =list.max + 1;
 			}
+			return defaultSeatNumber;
+	}
 
+	def getSeatNumbers(airplaneType: AirplaneType, seat:Seat_data) : List[Int] = {
+			var defaultSeatNumber = getInitialSeatNumber(airplaneType);
 			var defaultAmount = 1;
 			var result = List[Int]();
 			seat match {
 			case Seat_data(Filled(number),_, _) => defaultSeatNumber = number;
+			case _ => 
 			}
 			seat match {
 			case Seat_data(_,Filled(amount), _) => defaultAmount = amount;
+			case _ => 
 			}
 			while(result.size != defaultAmount) {
 				result = defaultSeatNumber :: result;
@@ -497,6 +569,13 @@ object Handler {
 			}
 			return result;
 	}
+
+	def getSeatNumbers(airplaneType: AirplaneType, seatType: String) : List[Int] = {
+			var result = List[Int]();
+			getAirplaneTypeIds(airplaneType).foreach(id => result = getSeatNumbers("select seatNumber from (seat JOIN seattype on seat.idSeatType=seatType.idseatType) where (name='" + seatType + "' and idAirplaneType='" + (id+"") + "'") ::: result);
+			return result;
+	}
+
 
 	def addAirplaneType(airplaneType:AirplaneType_data, arrangement: List[Seat_data]) {
 		if(airplaneType.name != null) {
@@ -595,33 +674,60 @@ object Handler {
 	// Flight /////////
 	////////////////////////////////////////////////////////////////////////////////
 
-	def addFlight(flight:Flight_data) {
-//	  var map = new HashMap[String,java.sql.Time]();
-//	  var arrivalTime = null;
-//	  flight match {
-//	    case Flight_data(_,_,Filled(arrival),_) => arrivalTime = toDateTime(arrival);
-//	  }
-//	  getTemplateIds(flight.template).foreach(id => 
-//		map.put((id.idAirline + id.idTemplate),getDuration("Select duration from (template join flighttime on (idAirportFrom=idFromAirport and idAirportTo=idToAirport)) where (idAirline='"+ id.idAirline + "' and idTemplate='" + id.idTemplate + "'"))); 
-	}
-	
-	def toDateTime(dateTime: DateTime) : java.sql.Timestamp = {
-	  return null;
-	}
-	
-	def getArrivalTime(template:Template) : DateTime = {
-//	  //TODO determine arrival data, either it is filled in in the data, else it has to be retrieved from the corresponding template
-//	  template match {
-//	    case Flight_data(_,_,Filled(arrivalTime),_) => return arrivalTime;
-//	    case Flight_data(_,_,Empty(),_) => return calculateArrivalFromTemplate(flight)
-//	  }
-	  return null;
+	def insert(flight:Flight_data) = {
+		var arrivalTime = extractArrivalTime(flight);
+		var airplaneTypes = extractAirplaneTypes(flight);
+		var insert = "`cancelled`, `departure`";
+		var values = (0+"") + ",'" + getDateTime(flight.departure) + "'";
+		if(!arrivalTime.equals("")) {
+			insert += ",`arrival`";
+			values += ",'" + arrivalTime + "'";
+		}
+		if(airplaneTypes.size >= 1) {
+			insert += ",`idAirplaneType`";
+			airplaneTypes.foreach(id => values += ",'" + id + "'");
+		}
+		insert += ",`idAirline`,`idTemplate`";
+		getTemplateIds(flight.template).foreach(id =>
+		(Q.u + "insert into flight("+ insert +") values (" + values  + ",'" + id.idAirline +"','" + (id.idTemplate+"") +"')").execute);
 	}
 
-	def calculateArrival(template:Template) : DateTime = {
-	  return null;
+	def addFlight(flight:Flight_data) {
+		var map = new HashMap[TemplateId,java.sql.Time]();
+
+		execute[Flight_data](insert,flight);
+
+		//		getTemplateIds(flight.template).foreach(id => 
+		//		map.put(id,getDuration("Select duration from (template join flighttime on (idAirportFrom=idFromAirport and idAirportTo=idToAirport)) where (idAirline='"+ id.idAirline + "' and idTemplate='" + id.idTemplate + "'"))); 
 	}
-	
+
+	def extractArrivalTime(flight:Flight_data) : String = {
+			var arrivalTime = "";
+			flight match {
+			case Flight_data(_,_,Filled(arrival),_) => arrivalTime = getDateTime(arrival);
+			case _ => 
+			}
+			return arrivalTime
+	}
+
+	def extractAirplaneTypes(flight:Flight_data) : List[Int] = {
+			var airplaneTypes = List[Int]();
+			flight match {
+			case Flight_data(_,_,_,Filled(airplaneTypeVal)) => airplaneTypes = getAirplaneTypeIds(airplaneTypeVal);
+			case _ => 
+			}
+			return airplaneTypes
+	}
+
+	def getDateTime(dateTime: DateTime) : String = {
+			var time = createDurationString(Time(Filled(0),Filled(0),Filled(0)));
+			dateTime match {
+			case DateTime(_,Filled(timeVal)) => time = createDurationString(timeVal);
+			case _ => 
+			}
+			return getDateString(dateTime.date) + " " + time;
+	}
+
 	def addFlight2(Flight:Flight_data, prices: List[SeatInstance_data]) {
 
 	}
@@ -647,10 +753,23 @@ object Handler {
 			var airplaneTypeIds = List[Int]();
 			template match {
 			case Template(Filled(airline),_,_,_,_) => airlineIds = getAirlineIds(airline);
+			case _ => 
+			}
+			template match {
 			case Template(_,Filled(fln),_,_,_) => flnVal = fln;
+			case _ => 
+			}
+			template match {
 			case Template(_,_,Filled(from),_,_) => airportFromIds = getAirportIds(from);
+			case _ => 
+			}
+			template match {
 			case Template(_,_,_,Filled(to),_) => airportToIds = getAirportIds(to);
+			case _ => 
+			}
+			template match {
 			case Template(_,_,_,_,Filled(airplaneType)) => airplaneTypeIds = getAirplaneTypeIds(airplaneType);
+			case _ => 
 			}
 
 			var select = "";
@@ -699,6 +818,7 @@ object Handler {
 			airline match {
 			case Airline(_,Filled(airlineName)) => name = airlineName;
 			case Airline(Filled(idAirline),_) => id = idAirline;
+			case _ => 
 			}
 			var where ="";
 			if(!name.equals("")) {
@@ -841,6 +961,14 @@ object Handler {
 			return q.first.nr;
 	}
 
+	implicit val getSeatNumberResult = GetResult(r => SeatNumber(r.nextInt));
+	def getSeatNumbers(query: String): List[Int] = {
+			var result = List[Int]();
+			val q = Q.queryNA[SeatNumber](query);
+			result = q.first.nr :: result;
+			return result;
+	}
+
 	implicit val getIdResult = GetResult(r => Id(r.nextInt));
 	def getIds(query:String) : List[Int] = {
 			var result = List[Int]();
@@ -861,7 +989,7 @@ object Handler {
 			Q.queryNA[TemplateId](query).foreach( r => result = r :: result);
 			return result;
 	}
-	
+
 	implicit val getDurationResult = GetResult(r => Duration(r.nextTime()));
 	def getDuration(query:String) : java.sql.Time = {
 			val q = Q.queryNA[Duration](query);

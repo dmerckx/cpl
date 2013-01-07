@@ -45,6 +45,12 @@ case class IllegalDurationException() extends Exception
 case class IllegalFLNException(fln: String) extends Exception
 case class NoSuchAirlineException(id: String) extends Exception
 case class NoSuchWeekdayException(day: String) extends Exception
+case class NoSuchFromAirport() extends Exception
+case class NoSuchToAirport() extends Exception
+case class NonUniqueFromAirport() extends Exception
+case class NonUniqueToAirport() extends Exception
+case class NonUniqueAirplaneType() extends Exception
+case class NoSuchAirplaneType() extends Exception
 
 class Exceptions {
 }
