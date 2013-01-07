@@ -367,14 +367,58 @@ object Handler {
 		}
 		val airlineId = getAirlineIdFromFLN(fln);
 		val templateId = getTemplateIdFromFLN(fln);
-		
+		if (!isExistingAirline(airlineId)) {
+			throw new NoSuchAirlineException(airlineId);
+		}		
 		for (fromId <- airportFromList) {
 			for (toId <- airportToList) {
 				for (typeId <- airplaneTypeList) {
-					
+					var query = "INSERT INTO template(`idAirline`,`idTemplate`,`idAirplaneType`,`idAirportFrom`,`idAirportTo`) VALUES('" + airlineId + "','" + templateId + "','" + typeId + "','" + fromId + "','" + toId + "')";
+					(Q.u + query).execute();
+					for (period <- periods) {
+						
+						//var periodsQuery = "INSERT INTO period(`idPeriod`,`idAirline`,`idTemplate`,``" +
+					}
 				}
 			}
 		}
+	}
+	
+	def getDateString(date: Date) : String = {
+		var days = "";
+		var months = "";
+		var years = "";
+		date match {
+		  case Date(d,_,_) => (if (d/10 == 0) {days = "0" + (d+"")} else {days = (d+"")})
+		  case Date(_,m,_) => (if (m/10 == 0) {months = "0" + (m+"")} else {months = (m+"")})
+		  case Date(_,_,y) => years = (y+"")
+		}
+		return years + "-" + months + "-" + days;
+	}
+	
+//	def getPeriodQuery(period: Period_data, airlineId: String, templateId: Int) String : = {
+//		var dateFromString = "";
+//		var dateToString = "";
+//		var weekday = "";
+//		var timeString = "";
+//		period match {
+//		  case Period_data(Filled(Date(d,m,y)),_,_,_) => dateFromString = getDateString(Date(d,m,y))
+//		  case Period_data(_,Filled(Date(d,m,y)),_,_) => dateToString = getDateString(Date(d,m,y))
+//		  case Period_data(_,_,Filled(d),_) => weekday = d
+//		  case Period_data(_,_,_,t) => timeString = createDurationString(t)
+//		}
+//		var variablesString = "(`idAirline`,`idTemplate`,";
+//		var valuesSring = "('" + airlineId + "','" + 
+//		if (!)
+//	}
+//	
+	def isExistingAirline(airlineId: String) : Boolean = {
+	  if (hasUniqueResult(select("count(*)", "airline","idAirline='" + airlineId + "'"))) {
+	    return true
+	  } 
+	  else {
+	    return false;
+	  }
 	}
 
 	
