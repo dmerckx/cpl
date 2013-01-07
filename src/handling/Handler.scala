@@ -376,8 +376,9 @@ object Handler {
 					var query = "INSERT INTO template(`idAirline`,`idTemplate`,`idAirplaneType`,`idAirportFrom`,`idAirportTo`) VALUES('" + airlineId + "','" + templateId + "','" + typeId + "','" + fromId + "','" + toId + "')";
 					(Q.u + query).execute();
 					for (period <- periods) {
-						
-						//var periodsQuery = "INSERT INTO period(`idPeriod`,`idAirline`,`idTemplate`,``" +
+						val templateIdInt = Integer.parseInt(templateId);
+						var periodQuery = getPeriodQuery(period,airlineId,templateIdInt);
+						(Q.u + periodQuery).execute();
 					}
 				}
 			}
@@ -396,22 +397,62 @@ object Handler {
 		return years + "-" + months + "-" + days;
 	}
 	
-//	def getPeriodQuery(period: Period_data, airlineId: String, templateId: Int) String : = {
-//		var dateFromString = "";
-//		var dateToString = "";
-//		var weekday = "";
-//		var timeString = "";
-//		period match {
-//		  case Period_data(Filled(Date(d,m,y)),_,_,_) => dateFromString = getDateString(Date(d,m,y))
-//		  case Period_data(_,Filled(Date(d,m,y)),_,_) => dateToString = getDateString(Date(d,m,y))
-//		  case Period_data(_,_,Filled(d),_) => weekday = d
-//		  case Period_data(_,_,_,t) => timeString = createDurationString(t)
-//		}
-//		var variablesString = "(`idAirline`,`idTemplate`,";
-//		var valuesSring = "('" + airlineId + "','" + 
-//		if (!)
-//	}
-//	
+	def getWeekdayInt(day: String) : Int = {
+	  if (day.equals("monday")) {
+	    return 1;
+	  }
+	  if (day.equals("tuesday")) {
+	    return 2;
+	  }
+	  if (day.equals("wednesday")) {
+	    return 3;
+	  }
+	  if (day.equals("thurdsday")) {
+	    return 4;
+	  }
+	  if (day.equals("friday")) {
+	    return 5;
+	  }
+	  if (day.equals("saturday")) {
+	    return 6;
+	  }
+	  if (day.equals("sunday")) {
+	    return 7;
+	  }
+	  throw new NoSuchWeekdayException(day);
+	}
+	
+	def getPeriodQuery(period: Period_data, airlineId: String, templateId: Int) : String = {
+		var dateFromString = "";
+		var dateToString = "";
+		var weekday = 0;
+		var timeString = "";
+		period match {
+		  case Period_data(Filled(Date(d,m,y)),_,_,_) => dateFromString = getDateString(Date(d,m,y))
+		  case Period_data(_,Filled(Date(d,m,y)),_,_) => dateToString = getDateString(Date(d,m,y))
+		  case Period_data(_,_,Filled(d),_) => weekday = getWeekdayInt(d)
+		  case Period_data(_,_,_,t) => timeString = createDurationString(t)
+		}
+		var variablesString = "(`idAirline`,`idTemplate`";
+		var valuesString = "('" + airlineId + "','" + templateId + "'";
+		if (!dateFromString.equals("")) {
+		  variablesString = variablesString + ",`fromDate`";
+		  valuesString = ",'" + dateFromString + "'";		  
+		}
+		if (!dateToString.equals("")) {
+		  variablesString = variablesString + ",`toDate`";
+		  valuesString = ",'" + dateToString + "'";
+		}
+		if (weekday != 0) {
+		  variablesString = variablesString + ",`day`";
+		  valuesString = ",'" + weekday + "'";
+		}
+		variablesString = variablesString + ",`flightStartTime`)";
+		valuesString = ",'" + timeString + "')";
+		var query = "INSERT INTO period" + variablesString + "VALUES" + valuesString;
+		return query;
+	}
+	
 	def isExistingAirline(airlineId: String) : Boolean = {
 	  if (hasUniqueResult(select("count(*)", "airline","idAirline='" + airlineId + "'"))) {
 	    return true
