@@ -93,10 +93,7 @@ case class RemoveFlightTime(flightTimeSelector:FlightTime) extends Operation
 //## Types
 case class AirplaneType(name:Opt[String]) extends Type;
 case class AirplaneType_data(name:String) extends Type;
-sealed abstract class Seat extends Type;
-case class Seat1(number:Opt[Int], amt:Opt[Int]) extends Seat;
-// in parser: seatType => type
-case class Seat2(seatType:Opt[String], amt:Opt[Int]) extends Seat;
+case class Seat(number:Opt[Int], seatType:Opt[String]) extends Type;
 	// Number specifies the seat number.
 	//		The default value of the seat number is [highest seat number in airplane type so far] + 1
 	// Amt specifies the amount of seats created.
