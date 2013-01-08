@@ -5,7 +5,8 @@ case class IllegalCityNameException(name:String) extends Exception
 case class AlreadyExistingCityNameException(name:String) extends Exception
 case class NoSuchCityNameException(name:String) extends Exception
 case class NoSuchCityException(name:String) extends Exception
-
+case class NonUniqueCityNameException() extends Exception
+case class ExistingReferenceException() extends Exception
 
 //case class NotAllowedCityNameException(name:String) extends Exception
 //case class NotAllowedCityCodeException(short:String) extends Exception
@@ -43,6 +44,8 @@ case class NoDurationException() extends Exception
 case class IllegalDurationException() extends Exception
 
 //TEMPLATE
+case class NoSuchTemplateException() extends Exception
+case class NonUniqueTemplateException() extends Exception
 case class IllegalFLNException(fln: String) extends Exception
 case class NoSuchAirlineException(id: String) extends Exception
 case class NoSuchWeekdayException(day: String) extends Exception

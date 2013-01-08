@@ -9,14 +9,23 @@ import Database.threadLocalSession
 import scala.slick.jdbc.{GetResult, StaticQuery => Q}
 import Q.interpolation
 
+case class CityName(name:String);
+
 object CityTest  {
 
 	def main(args: Array[String]) : Unit = {
-			succes();
-			fail();
-			nothing();
+//			succes();
+//			fail();
+//			nothing();
+			remove();
 	}
 
+	def remove() {
+	  Handler.handle(RemoveCity(City(Filled("Valencia"))));
+		if(contains("Valencia"))
+		  throw new FailedTestError("valencia was not removed!");
+	}
+	
 	def succes() {
 		var name = "Madrid";
 		Handler.removeCity(City(Filled(name)));
@@ -36,6 +45,19 @@ object CityTest  {
 		Handler.removeCity(City(Filled("Barcelona")));
 		if(contains("Barcelona"))
 			throw new FailedTestError("new city was not in the database");
+		Handler.removeCity(City(Filled("Huldenberg")));
+		Handler.removeCity(City(Filled("Brussels")));
+		Handler.handle(AddCity(City_data("Brussels")));
+		Handler.handle(ChangeCity(City(Filled("Brussels")),City(Filled("Huldenberg"))));
+		if(contains("Brussels"))
+			throw new FailedTestError("Brussels was not renamed!");
+		if(!contains("Huldenberg"))
+			throw new FailedTestError("renamed city Huldenberg is not in the database");
+		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
+			if(!cityName("select city.name from (Airport JOIN City ON airport.city=city.idCity) where airport.name='BrusselsAirport'").equals("Huldenberg"))
+				throw new FailedTestError("city update was not pushed towards relying airport");
+		}
 	}
 
 	def fail() {
@@ -50,21 +72,21 @@ object CityTest  {
 	}
 
 	def nothing() {
-	  var name = "Madrid";
-	  var toName = "Barcelona";
-	  Handler.removeCity(City(Filled(name)));
-	  Handler.removeCity(City(Filled(toName)));
-	  Handler.handle(AddCity(City_data(name)));
-	  Handler.handle(ChangeCity(City(Empty()),City(Filled(toName))));
-	  if(contains(toName))
+		var name = "Madrid";
+		var toName = "Barcelona";
+		Handler.removeCity(City(Filled(name)));
+		Handler.removeCity(City(Filled(toName)));
+		Handler.handle(AddCity(City_data(name)));
+		Handler.handle(ChangeCity(City(Empty()),City(Filled(toName))));
+		if(contains(toName))
 			throw new FailedTestError("invalid change!");
-	  Handler.handle(ChangeCity(City(Filled(name)),City(Empty())));
-	   if(contains(toName))
+		Handler.handle(ChangeCity(City(Filled(name)),City(Empty())));
+		if(contains(toName))
 			throw new FailedTestError("invalid change!");
-	   if(!contains(name))
-	     throw new FailedTestError("invalid change!");
+		if(!contains(name))
+			throw new FailedTestError("invalid change!");
 	}
-	
+
 	def contains(name:String) : Boolean = {
 			var result = 0;
 			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
@@ -80,6 +102,12 @@ object CityTest  {
 	def count(query : String) : Int = {
 			val q = Q.queryNA[Count](query);
 			return q.first.nr;
+	}
+
+	implicit val getCityNameResult = GetResult(r => CityName(r.nextString));
+	def cityName(query : String) : String = {
+			val q = Q.queryNA[CityName](query);
+			return q.first.name;
 	}
 
 }

@@ -67,6 +67,7 @@ object Handler {
 
 		//Template
 		case AddTemplate(template, prices, periods) => addTemplate(template,prices,periods);
+		case AddTemplatePeriods(template,periods) => addTemplatePeriods(template,periods);
 
 		case AddSeats(airplaneType, seat_datas) => addSeats(airplaneType,seat_datas);
 		}
@@ -115,8 +116,9 @@ object Handler {
 
 			if (!name.matches("[a-zA-Z]+"))
 				throw new IllegalCityNameException(name);
-
-			existsCityName(name);
+			println(name);
+			if(!hasUniqueResult(select("count(*)", "city", "name='" + name + "'")))
+				throw new NonUniqueCityNameException();
 
 			if (exists(select("count(*)", "city", "name='" + toName + "'")))
 				throw new AlreadyExistingCityNameException(toName);
@@ -138,9 +140,26 @@ object Handler {
 
 	def removeCity(name: String) {
 		if (name != null) {
-			//			existsCityName(name);
-			execute(remove_City, name);
+			if(areReferencesTo(name))
+				throw new ExistingReferenceException();
+				execute(remove_City, name);
 		}
+	}
+
+	def areReferencesTo(name:String) : Boolean = {
+	  var result = false;
+	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+					driver = "com.mysql.jdbc.Driver") withSession {
+			var airportIds = getCodes("select idAirport from (Airport JOIN City ON airport.city=city.idCity) where city.name='" + name + "'");
+			for(Id <- airportIds) {
+			  println("id: " + Id+"");
+			  val airport = Airport(Empty(),Empty(),Filled(Id));
+				if(getTemplateIds(Template(Empty(),Empty(),Filled(airport),Empty(),Empty())).size > 0 || getTemplateIds(Template(Empty(),Empty(),Empty(),Filled(airport),Empty())).size > 0) {
+					result= true;
+				}
+			}
+	  }
+	return result;
 	}
 
 	def existsCityName(cityName: String) {
@@ -231,6 +250,7 @@ object Handler {
 	}
 
 	def insert(flightTime: FlightTime_data) : Unit = {
+			//TODO unique flight checking!
 			val duration = flightTime.time;
 			duration match {
 			case Time(Empty(),Empty(),Empty()) => throw new NoDurationException();
@@ -367,6 +387,21 @@ object Handler {
 			}
 	}
 
+	def addTemplatePeriods(template:Template,periods:List[Period_data]) {
+		var templateIds = getTemplateIds(template);
+		for(Id <- templateIds) {
+			addPeriods(periods,Id.idAirline,Id.idTemplate);
+		}
+	}
+
+	def addPeriods(periods:List[Period_data],airlineId:String,templateId:Int) {
+		for (period <- periods) {
+			var periodQuery = getPeriodQuery(period,airlineId,templateId);
+			println("period query" + periodQuery);
+			(Q.u + periodQuery).execute();
+		}
+	}
+
 	def addTemplate(template: Template_data, prices:List[SeatInstance_data], periods: List[Period_data]) {
 		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
 				driver = "com.mysql.jdbc.Driver") withSession {
@@ -400,6 +435,7 @@ object Handler {
 			val fromId = airportFromList.head;
 			val toId = airportToList.head;
 			val typeId = airplaneTypeList.head;
+			val templateIdInt = Integer.parseInt(templateId);
 
 			if(!areUniqueSeatTypes(prices))
 				throw new NonUniqueSeatTypeException();
@@ -409,7 +445,7 @@ object Handler {
 
 			if(!areCorrespondingSeats(prices, template.airplaneType))
 				throw new NoCorrespondingSeatsException();
-			
+
 			if(count("Select Count(*) from Flighttime where (idFromAirport='" + fromId +"' and idToAirport='" + toId + "' and idAirplaneType='" + typeId + "')") != 1)
 				throw new NoFlightTimePresentException();
 
@@ -419,12 +455,8 @@ object Handler {
 			var query = "INSERT INTO template(`idAirline`,`idTemplate`,`idAirplaneType`,`idAirportFrom`,`idAirportTo`) VALUES('" + airlineId + "','" + templateId + "','" + typeId + "','" + fromId + "','" + toId + "')";
 			(Q.u + query).execute();
 
-			for (period <- periods) {
-				val templateIdInt = Integer.parseInt(templateId);
-				var periodQuery = getPeriodQuery(period,airlineId,templateIdInt);
-				println("period query" + periodQuery);
-				(Q.u + periodQuery).execute();
-			}
+			addPeriods(periods,airlineId,templateIdInt);
+
 			for (seat <- prices) {
 				var priceVal = extractPrice(seat);
 				extractSeatNumbers(seat, template.airplaneType).foreach(seatNb => (Q.u + "insert into seatinstancetemplate(`idAirline`,`idTemplate`,`seatnumber`,`idAirplanetype`,`price`) values ('" + airlineId + "','" + (templateId+"") + "','" + (seatNb+"") + "','" + (typeId+"") + "','" + (priceVal+"") +"')").execute)
@@ -433,24 +465,24 @@ object Handler {
 	}
 
 	def areCorrespondingSeats(arrangement:List[SeatInstance_data], airplaneType:AirplaneType) : Boolean = {
-	  var query = "select count(*) from seat where (seatNumber='";
-	  var totalSeats = 0;
-	  for(seat <- arrangement) {
-	    var seatNbs = extractSeatNumbers(seat, airplaneType);
-		  seatNbs.foreach(seatNb => query += seatNb+"' or SeatNumber='");
-		  totalSeats += seatNbs.size;
-	  }
-	  if(arrangement.size >= 1) {
-		  query = query.substring(0, query.length()-16);
-		  query += ")";
-		  if(count(query) == totalSeats)
-		    return true;
-		  else
-		    return false;
-	  } else
-	  return true;
+			var query = "select count(*) from seat where (seatNumber='";
+			var totalSeats = 0;
+			for(seat <- arrangement) {
+				var seatNbs = extractSeatNumbers(seat, airplaneType);
+				seatNbs.foreach(seatNb => query += seatNb+"' or SeatNumber='");
+				totalSeats += seatNbs.size;
+			}
+			if(arrangement.size >= 1) {
+				query = query.substring(0, query.length()-16);
+				query += ")";
+				if(count(query) == totalSeats)
+					return true;
+				else
+					return false;
+			} else
+				return true;
 	}
-	
+
 	def areValidSeatTypes(func: (String => Boolean), param:List[SeatInstance_data]) : Boolean = {
 		var result = true;
 		for(seat <- param) {
@@ -678,7 +710,7 @@ object Handler {
 			if(airplaneTypeIds.size ==0)
 				throw new NoSuchAirplaneTypeException();
 			var airplane = airplaneTypeIds.head;
-			
+
 			insert(arrangement,airplane,airplaneType);
 		}
 	}
@@ -748,6 +780,10 @@ object Handler {
 	////////////////////////////////////////////////////////////////////////////////
 
 	def insert(flight:Flight_data) = {
+	  if(getTemplateIds(flight.template).size > 1)
+		  throw new NonUniqueTemplateException();
+		if(getTemplateIds(flight.template).size == 0)
+		  throw new NoSuchTemplateException();
 		var arrivalTime = extractArrivalTime(flight);
 		var airplaneTypes = extractAirplaneTypes(flight);
 		var insert = "`cancelled`, `departure`";
@@ -803,6 +839,24 @@ object Handler {
 
 	def addFlight2(Flight:Flight_data, prices: List[SeatInstance_data]) {
 
+		if(!areUniqueSeatTypes(prices))
+			throw new NonUniqueSeatTypeException();
+
+		if(!areExistingSeatTypes(prices))
+			throw new NoSuchSeatTypeException();
+		//TODO
+//		extractAirplaneTypes(flight);
+//		
+//		if(!areCorrespondingSeats(prices, ))
+//			throw new NoCorrespondingSeatsException();
+//		
+//		addFlight(flight);
+//		
+		//		
+		//		for (seat <- prices) {
+		//			var priceVal = extractPrice(seat);
+		//			extractSeatNumbers(seat, template.airplaneType).foreach(seatNb => (Q.u + "insert into seatinstance(`seatnumber`,`idAirplanetype`,`price`) values ('" + airlineId + "','" + (templateId+"") + "','" + (seatNb+"") + "','" + (typeId+"") + "','" + (priceVal+"") +"')").execute)
+		//		}
 	}
 
 	def changeFlight(flightSelector:Flight, changeFlight:Flight_change) {

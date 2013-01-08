@@ -145,20 +145,6 @@ case class AddSeats(airplaneTypeSelector:AirplaneType, data:List[Seat_data]) ext
  * 		name: "Boeing 707"
  * }
  */
-//CHANGE SEAT ALSO PROVIDED
-case class ChangeSeats(airplaneTypeSelector:AirplaneType, seatSelector:List[Seat], seatChange:Seat) extends Operation
-/* 
- * CHANGE SEATS [
- *		{ number: 101 },
- * 		{ number: 250 },
- * 		{ type: first }
- * ] OF AIRPLANE TYPE {
- * 		name: "Boeing 707"
- * } TO {
- * 		type: business
- * }
- */
-
 // Corresponds to removal of all seats followed by adding the list in data.
 //CHANGE SEAT ALSO PROVIDED
 case class ChangeSeatsTo(airplaneTypeSelector:AirplaneType, data:List[Seat_data]) extends Operation
@@ -422,21 +408,7 @@ sealed abstract class SeatInstance extends Type;
 case class SeatNumberInstances(number: Int, amt: Opt[Int]) extends SeatInstance
 case class SeatTypeInstances(seatType: String) extends SeatInstance
 
-//CHANGE INSTANCE syntax is er nog
-case class ChangeTemplateSeatInstances(
-    templateSelector:Template,
-    seatInstanceSelectors:List[SeatInstance],
-    seatInstances:SeatInstance_data) extends Operation
-/*
- * CHANGE TEMPLATE {
- * 		airline : "ABC"
- * } CHANGE SEAT INSTANCES [
- * 		{ seatType: business },
- * 		{ seatNumber: 404, amt: 100 }
- * ] TO	{
- * 		seatNumber: 1000, price: { dollar: 100 }
- * }
- */
+
 //CHANGE SEAT INSTANCE syntax is er nog
 case class ChangeTemplateSeatInstancesTo(
     templateSelector:Template,
@@ -451,14 +423,6 @@ case class ChangeTemplateSeatInstancesTo(
  * 		{ number: 100, amt: 2, price: { dollar: 0 } }
  * 	]
  */
-case class ChangeFlightSeatInstance(
-    flightSelector:Flight,
-    seatInstanceSelectors:SeatInstance,
-    seatInstances:SeatInstance_data) extends Operation
-case class ChangeFlightSeatInstances(
-    flightSelector:Flight,
-    seatInstanceSelectors:List[SeatInstance],
-    seatInstances:SeatInstance_data) extends Operation
 case class ChangeFlightSeatInstancesTo(
     flightSelector:Flight,
     seatInstances:List[SeatInstance_data]) extends Operation
