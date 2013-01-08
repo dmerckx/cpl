@@ -33,7 +33,8 @@ case class IllegalAirlineCodeException(short:String) extends Exception
 //SEATTYPE
 case class IllegalSeatTypeException(name:String) extends Exception
 case class AlreadyExistingSeatTypeException(name:String) extends Exception
-
+case class NoSuchSeatTypeException() extends Exception
+case class NonUniqueSeatTypeException() extends Exception
 //DISTANCE
 case class IllegalDistanceException(dist:Int) extends Exception
 
@@ -51,6 +52,13 @@ case class NonUniqueFromAirport() extends Exception
 case class NonUniqueToAirport() extends Exception
 case class NonUniqueAirplaneType() extends Exception
 case class NoSuchAirplaneType() extends Exception
+case class NoDistancePresentException() extends Exception
+case class NoFlightTimePresentException() extends Exception
+case class NoCorrespondingSeatsException() extends Exception
+
+//SEATS
+case class NonUniqueAirplaneTypeException() extends Exception
+case class NoSuchAirplaneTypeException() extends Exception
 
 class Exceptions {
 }

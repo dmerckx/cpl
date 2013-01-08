@@ -10,7 +10,9 @@ import Q.interpolation
 //Exceptions
 import handling.exceptions._
 
-import java.util.HashMap
+import java.util.HashMap;
+import java.util.Calendar
+import java.text.SimpleDateFormat;
 
 case class Count(nr: Int);
 case class Id(id: Int);
@@ -62,6 +64,11 @@ object Handler {
 		case AddFlight2(flight, prices) => addFlight2(flight, prices);
 		case ChangeFlight(flightFrom, flightTo) => changeFlight(flightFrom, flightTo);
 		case RemoveFlight(flight) => removeFlight(flight);
+
+		//Template
+		case AddTemplate(template, prices, periods) => addTemplate(template,prices,periods);
+
+		case AddSeats(airplaneType, seat_datas) => addSeats(airplaneType,seat_datas);
 		}
 	}
 
@@ -237,7 +244,6 @@ object Handler {
 				for (toId <- airportToList) {
 					for (typeId <- airplaneTypeList) {
 						val query = "INSERT INTO flighttime(`idFromCity`,`idToCity`,`idAirplaneType`,`duration`) VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')";
-						println(query);
 						(Q.u + query).execute();			
 					}
 				}
@@ -353,7 +359,7 @@ object Handler {
 	}
 
 	def isValidFLN(fln: String) : Boolean = {
-			if (!fln.matches("[A-Z]{2-3}[0-9]{3-4}")) {
+			if (!fln.matches("[A-Z]{2,3}[0-9]{3,4}")) {
 				return false;
 			}
 			else {
@@ -361,178 +367,227 @@ object Handler {
 			}
 	}
 
-	def insert(template: Template_data, prices:List[SeatInstance_data], periods: List[Period_data]) {
-		val airportFromList = getAirportFromIds(template);
-		if(airportFromList.size > 1) 
-			throw new NonUniqueFromAirport();
-		if(airportFromList.size == 0)
-			throw new NoSuchFromAirport();
+	def addTemplate(template: Template_data, prices:List[SeatInstance_data], periods: List[Period_data]) {
+		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
+			val airportFromList = getAirportFromIds(template);
+			if(airportFromList.size > 1) 
+				throw new NonUniqueFromAirport();
+			if(airportFromList.size == 0)
+				throw new NoSuchFromAirport();
 
-		val airportToList = getAirportToIds(template);
-		if(airportToList.size > 1)
-			throw new NonUniqueToAirport();
-		if(airportToList.size == 0) 
-			throw new NoSuchToAirport();
+			val airportToList = getAirportToIds(template);
+			if(airportToList.size > 1)
+				throw new NonUniqueToAirport();
+			if(airportToList.size == 0) 
+				throw new NoSuchToAirport();
 
-		val airplaneTypeList = getAirplaneTypeIds(template);
-		if(airplaneTypeList.size > 1)
-			throw new NonUniqueAirplaneType();
-		if(airplaneTypeList.size == 0)
-			throw new NoSuchAirplaneType();
+			val airplaneTypeList = getAirplaneTypeIds(template);
+			if(airplaneTypeList.size > 1)
+				throw new NonUniqueAirplaneType();
+			if(airplaneTypeList.size == 0)
+				throw new NoSuchAirplaneType();
 
-		val fln = template.fln;
-		if (!isValidFLN(fln)) 
-			throw new IllegalFLNException(fln)
+			val fln = template.fln;
+			if (!isValidFLN(fln)) 
+				throw new IllegalFLNException(fln)
 
-		val airlineId = getAirlineIdFromFLN(fln);
-		val templateId = getTemplateIdFromFLN(fln);
-		if (!isExistingAirline(airlineId))
-			throw new NoSuchAirlineException(airlineId)		
+			val airlineId = getAirlineIdFromFLN(fln);
+			val templateId = getTemplateIdFromFLN(fln);
+			if (!isExistingAirline(airlineId))
+				throw new NoSuchAirlineException(airlineId)		
 
-		val fromId = airportFromList.head;
-		val toId = airportToList.head;
-		val typeId = airplaneTypeList.head;
+			val fromId = airportFromList.head;
+			val toId = airportToList.head;
+			val typeId = airplaneTypeList.head;
 
-		var query = "INSERT INTO template(`idAirline`,`idTemplate`,`idAirplaneType`,`idAirportFrom`,`idAirportTo`) VALUES('" + airlineId + "','" + templateId + "','" + typeId + "','" + fromId + "','" + toId + "')";
-		(Q.u + query).execute();
+			if(!areUniqueSeatTypes(prices))
+				throw new NonUniqueSeatTypeException();
 
-		for (period <- periods) {
-			val templateIdInt = Integer.parseInt(templateId);
-			var periodQuery = getPeriodQuery(period,airlineId,templateIdInt);
-			(Q.u + periodQuery).execute();
+			if(!areExistingSeatTypes(prices))
+				throw new NoSuchSeatTypeException();
+
+			if(!areCorrespondingSeats(prices, template.airplaneType))
+				throw new NoCorrespondingSeatsException();
+			
+			if(count("Select Count(*) from Flighttime where (idFromAirport='" + fromId +"' and idToAirport='" + toId + "' and idAirplaneType='" + typeId + "')") != 1)
+				throw new NoFlightTimePresentException();
+
+			if(count("Select Count(*) from Distance where (idFromAirport='" + fromId +"' and idToAirport='" + toId +"')") != 1)
+				throw new NoDistancePresentException();
+
+			var query = "INSERT INTO template(`idAirline`,`idTemplate`,`idAirplaneType`,`idAirportFrom`,`idAirportTo`) VALUES('" + airlineId + "','" + templateId + "','" + typeId + "','" + fromId + "','" + toId + "')";
+			(Q.u + query).execute();
+
+			for (period <- periods) {
+				val templateIdInt = Integer.parseInt(templateId);
+				var periodQuery = getPeriodQuery(period,airlineId,templateIdInt);
+				println("period query" + periodQuery);
+				(Q.u + periodQuery).execute();
+			}
+			for (seat <- prices) {
+				var priceVal = extractPrice(seat);
+				extractSeatNumbers(seat, template.airplaneType).foreach(seatNb => (Q.u + "insert into seatinstancetemplate(`idAirline`,`idTemplate`,`seatnumber`,`idAirplanetype`,`price`) values ('" + airlineId + "','" + (templateId+"") + "','" + (seatNb+"") + "','" + (typeId+"") + "','" + (priceVal+"") +"')").execute)
+			}
 		}
-		for (price <- prices) {
-			var priceVal = extractPrice(price);
-			extractSeatNumbers(price, template.airplaneType).foreach(seatNb => "insert into seatinstancetemplate(`idAirline`,`idTemplate`,`seatnumber`,`idAirplanetype`,`price`) values ('" + airlineId + "','" + templateId + "','" + seatNb + "','" + typeId + "','" + priceVal +"'")
-		}
 	}
 
-	def extractPrice(seatInstance:SeatInstance_data) : Double = {
-			var price: Price = Dollar(Filled(0),Filled(0));
-	seatInstance match {
-		case SeatNumberInstances_data(_,_,priceVal) => price = priceVal;
-		case SeatTypeInstances_data(_,priceVal) => price = priceVal;
+	def areCorrespondingSeats(arrangement:List[SeatInstance_data], airplaneType:AirplaneType) : Boolean = {
+	  var query = "select count(*) from seat where (seatNumber='";
+	  var totalSeats = 0;
+	  for(seat <- arrangement) {
+	    var seatNbs = extractSeatNumbers(seat, airplaneType);
+		  seatNbs.foreach(seatNb => query += seatNb+"' or SeatNumber='");
+		  totalSeats += seatNbs.size;
+	  }
+	  if(arrangement.size >= 1) {
+		  query = query.substring(0, query.length()-16);
+		  query += ")";
+		  if(count(query) == totalSeats)
+		    return true;
+		  else
+		    return false;
+	  } else
+	  return true;
 	}
-	var result = 0d;
-	price match {
-		case Dollar(Filled(dollar), Filled(cent)) => result = dollar + cent/100;
-		case Dollar(Empty(), Filled(cent)) => result = cent/100;
-		case Dollar(Filled(dollar), Empty()) => result = dollar;
-		case Euro(Filled(euro), Empty()) => result = toDollar(euro);
-		case Euro(Empty(), Filled(cent)) => result = toDollar(cent/100);
-		case Euro(Filled(euro), Filled(cent)) => result = toDollar(euro + cent/100);
-		case _ =>
-	}
+	
+	def areValidSeatTypes(func: (String => Boolean), param:List[SeatInstance_data]) : Boolean = {
+		var result = true;
+		for(seat <- param) {
+			seat match {
+			case SeatTypeInstances_data(seatType,_) => result = result && func(seatType);
+			case _ => result = result && true;
+			}
+		}
 		return result;
 	}
 
-	def toDollar(amount:Double) : Double = {
-	  return amount*1.3;
-	}
-	
-	def extractSeatNumbers(seat:SeatInstance_data, airplaneType:AirplaneType) : List[Int] = {
-			seat match {
-			case SeatNumberInstances_data(number,Filled(amt),price) => return getSeatNumbers(airplaneType,Seat_data(Filled(number),Filled(amt),""));
-			case SeatNumberInstances_data(number,Empty(),price) => return getSeatNumbers(airplaneType,Seat_data(Filled(number),Empty(),""));
-			case SeatTypeInstances_data(seatType,price) => return getSeatNumbers(airplaneType, seatType);
-			}
+	def areUniqueSeatTypes(arrangement:List[SeatInstance_data]) : Boolean = {
+		return areValidSeatTypes(isUniqueSeatType,arrangement);
 	}
 
+	def isUniqueSeatType(seatType:String) : Boolean = {
+		return !(count("select count(*) from seattype where name='" + seatType + "'") > 1);
+	}
+
+	def areExistingSeatTypes(arrangement:List[SeatInstance_data]) : Boolean = {
+		return areValidSeatTypes(isExistingSeatType,arrangement);
+	}
+
+	def isExistingSeatType(seatType:String) : Boolean = {
+		return count("select count(*) from seattype where name='" + seatType + "'") >= 1;
+	}
+
+	def extractPrice(seatInstance:SeatInstance_data) : Double = {
+		var price: Price = Dollar(Filled(0),Filled(0));
+	seatInstance match {
+	case SeatNumberInstances_data(_,_,priceVal) => price = priceVal;
+	case SeatTypeInstances_data(_,priceVal) => price = priceVal;
+	}
+	var result = 0d;
+	price match {
+	case Dollar(Filled(dollar), Filled(cent)) => result = dollar + cent/100;
+	case Dollar(Empty(), Filled(cent)) => result = cent/100;
+	case Dollar(Filled(dollar), Empty()) => result = dollar;
+	case Euro(Filled(euro), Empty()) => result = toDollar(euro);
+	case Euro(Empty(), Filled(cent)) => result = toDollar(cent/100);
+	case Euro(Filled(euro), Filled(cent)) => result = toDollar(euro + cent/100);
+	case _ =>
+	}
+	return result;
+	}
+
+	def toDollar(amount:Double) : Double = {
+		return amount*1.3;
+	}
+
+	def extractSeatNumbers(seat:SeatInstance_data, airplaneType:AirplaneType) : List[Int] = {
+		seat match {
+		case SeatNumberInstances_data(number,Filled(amt),price) => return getSeatNumbers(airplaneType,Seat_data(Filled(number),Filled(amt),""));
+		case SeatNumberInstances_data(number,Empty(),price) => return getSeatNumbers(airplaneType,Seat_data(Filled(number),Empty(),""));
+		case SeatTypeInstances_data(seatType,price) => return getSeatNumbers(airplaneType, seatType);
+		}
+	}
 
 	def getDateString(date: Date) : String = {
-			var days = "";
-			var months = "";
-			var years = "";
-			date match {
-			case Date(d,_,_) => (if (d/10 == 0) {days = "0" + (d+"")} else {days = (d+"")})
-			case _ => 
-			}
-			date match {
-			case Date(_,m,_) => (if (m/10 == 0) {months = "0" + (m+"")} else {months = (m+"")})
-			case _ =>
-			}
-			date match {
-			case Date(_,_,y) => years = (y+"")
-			case _ =>
-			}
-			return years + "-" + months + "-" + days;
-	}
-
-	def getWeekdayInt(day: String) : Int = {
-			if (day.equals("monday")) {
-				return 1;
-			}
-			if (day.equals("tuesday")) {
-				return 2;
-			}
-			if (day.equals("wednesday")) {
-				return 3;
-			}
-			if (day.equals("thurdsday")) {
-				return 4;
-			}
-			if (day.equals("friday")) {
-				return 5;
-			}
-			if (day.equals("saturday")) {
-				return 6;
-			}
-			if (day.equals("sunday")) {
-				return 7;
-			}
-			throw new NoSuchWeekdayException(day);
+		var days = "";
+		var months = "";
+		var years = "";
+		date match {
+		case Date(d,_,_) => (if (d/10 == 0) {days = "0" + (d+"")} else {days = (d+"")})
+		case _ => 
+		}
+		date match {
+		case Date(_,m,_) => (if (m/10 == 0) {months = "0" + (m+"")} else {months = (m+"")})
+		case _ =>
+		}
+		date match {
+		case Date(_,_,y) => years = (y+"")
+		case _ =>
+		}
+		return years + "-" + months + "-" + days;
 	}
 
 	def getPeriodQuery(period: Period_data, airlineId: String, templateId: Int) : String = {
-			var dateFromString = "";
-			var dateToString = "";
-			var weekday = 0;
-			var timeString = "";
-			period match {
-			case Period_data(Filled(Date(d,m,y)),_,_,_) => dateFromString = getDateString(Date(d,m,y))
-			case _ =>
-			}
-			period match {
-			case Period_data(_,Filled(Date(d,m,y)),_,_) => dateToString = getDateString(Date(d,m,y))
-			case _ => 
-			}
-			period match {
-			case Period_data(_,_,Filled(d),_) => weekday = getWeekdayInt(d)
-			case _ =>
-			}
-			period match {
-			case Period_data(_,_,_,t) => timeString = createDurationString(t)
-			case _ =>
-			}
-			var variablesString = "(`idAirline`,`idTemplate`";
-			var valuesString = "('" + airlineId + "','" + templateId + "'";
-			if (!dateFromString.equals("")) {
-				variablesString = variablesString + ",`fromDate`";
-				valuesString = ",'" + dateFromString + "'";		  
-			}
-			if (!dateToString.equals("")) {
-				variablesString = variablesString + ",`toDate`";
-				valuesString = ",'" + dateToString + "'";
-			}
-			if (weekday != 0) {
-				variablesString = variablesString + ",`day`";
-				valuesString = ",'" + weekday + "'";
-			}
-			variablesString = variablesString + ",`flightStartTime`)";
-			valuesString = ",'" + timeString + "')";
-			var query = "INSERT INTO period" + variablesString + "VALUES" + valuesString;
-			return query;
+		var dateFromString = "";
+		var dateToString = "";
+		var weekday = 0;
+		var timeString = "";
+		period match {
+		case Period_data(Filled(Date(d,m,y)),_,_,_) => dateFromString = getDateString(Date(d,m,y))
+		case _ =>
+		}
+		period match {
+		case Period_data(_,Filled(Date(d,m,y)),_,_) => dateToString = getDateString(Date(d,m,y))
+		case _ => 
+		}
+		period match {
+		case Period_data(_,_,Filled(d),_) => weekday = Integer.parseInt(d);
+		case _ =>
+		}
+		if(weekday<0 || weekday >7 )
+			throw new NoSuchWeekdayException(weekday+"");
+		period match {
+		case Period_data(_,_,_,t) => timeString = createDurationString(t)
+		case _ =>
+		}
+		var variablesString = "(`idAirline`,`idTemplate`";
+		var valuesString = "('" + airlineId + "','" + templateId + "'";
+		if (!dateFromString.equals("")) {
+			variablesString = variablesString + ",`fromDate`";
+			valuesString += ",'" + dateFromString + "'";		  
+		}
+		else {
+			variablesString = variablesString + ",`fromDate`";
+			valuesString += ",'" + getCurrentDate() + "'";
+		}
+		if (!dateToString.equals("")) {
+			variablesString = variablesString + ",`toDate`";
+			valuesString += ",'" + dateToString + "'";
+		}
+		if (weekday != 0) {
+			variablesString = variablesString + ",`day`";
+			valuesString += ",'" + weekday + "'";
+		}
+		variablesString = variablesString + ",`flightStartTime`)";
+		valuesString += ",'" + timeString + "')";
+		var query = "INSERT INTO period" + variablesString + " VALUES " + valuesString;
+		return query;
 	}
 
 	def isExistingAirline(airlineId: String) : Boolean = {
-			if (hasUniqueResult(select("count(*)", "airline","idAirline='" + airlineId + "'"))) {
-				return true
-			} 
-			else {
-				return false;
-			}
+		if (hasUniqueResult(select("count(*)", "airline","idAirline='" + airlineId + "'"))) {
+			return true
+		} 
+		else {
+			return false;
+		}
 	}
 
+
+	def getCurrentDate() : String = {
+			return (new SimpleDateFormat("yyyy-MM-dd")).format(Calendar.getInstance().getTime());
+	}
 
 	////////////////////////////////////////////////////////////////////////////////
 	// AirplaneType /////////
@@ -572,7 +627,7 @@ object Handler {
 
 	def getSeatNumbers(airplaneType: AirplaneType, seatType: String) : List[Int] = {
 			var result = List[Int]();
-			getAirplaneTypeIds(airplaneType).foreach(id => result = getSeatNumbers("select seatNumber from (seat JOIN seattype on seat.idSeatType=seatType.idseatType) where (name='" + seatType + "' and idAirplaneType='" + (id+"") + "'") ::: result);
+			getAirplaneTypeIds(airplaneType).foreach(id => result = getSeatNumbers("select seatNumber from (seat JOIN seattype on seat.idSeatType=seatType.idseatType) where (name='" + seatType + "' and idAirplaneType='" + (id+"") + "')") ::: result);
 			return result;
 	}
 
@@ -589,25 +644,43 @@ object Handler {
 
 			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
 					driver = "com.mysql.jdbc.Driver") withSession {
-				val ids = getAirplaneTypeIds(AirplaneType(Filled(airplaneType.name)));
-				for(airplaneTypeId <- ids) {
-					for(seat <- arrangement) {
-						getIds("Select idSeatType from SeatType where name='" + seat.seatType +"'").foreach(seatType =>
-						for(seatNumber <- getSeatNumbers(AirplaneType(Filled(airplaneType.name)), seat)) {
-							(Q.u + "INSERT INTO seat(`idSeatType`,`airplaneType`, `seatNumber`) VALUES ('" + (seatType+"") + "','" + (airplaneTypeId+"") + "','" + (seatNumber+"") + "')").execute;
-						});
-					}
-				}
+				insert(arrangement,getAirplaneTypeIds(AirplaneType(Filled(airplaneType.name))).head,AirplaneType(Filled(airplaneType.name)));
 			}
 		}
 	}
 
 	def changeAirplaneType(airplaneFrom:AirplaneType, airplaneTo:AirplaneType) {
-
+		//TODO
 	}
 
 	def removeAirplaneType(airplane:AirplaneType) {
+		//TODO
+	}
 
+	////////////////////////////////////////////////////////////////////////////////
+	// Seats ////////////
+	////////////////////////////////////////////////////////////////////////////////	
+
+	def insert(arrangement:List[Seat_data],airplaneId:Int, airplaneType:AirplaneType) = {
+		for(seat <- arrangement)
+			getIds("Select idSeatType from SeatType where name='" + seat.seatType +"'").foreach(seatType =>
+			for(seatNumber <- getSeatNumbers(airplaneType, seat)) {
+				(Q.u + "INSERT INTO seat(`idSeatType`,`idAirplaneType`,`seatNumber`) VALUES ('" + (seatType+"") + "','" + (airplaneId+"") + "','" + (seatNumber+"") + "')").execute;
+			});
+	}
+
+	def addSeats(airplaneType:AirplaneType,arrangement:List[Seat_data]) {
+		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
+			var airplaneTypeIds = getAirplaneTypeIds(airplaneType);
+			if(airplaneTypeIds.size > 1)
+				throw new NonUniqueAirplaneTypeException();
+			if(airplaneTypeIds.size ==0)
+				throw new NoSuchAirplaneTypeException();
+			var airplane = airplaneTypeIds.head;
+			
+			insert(arrangement,airplane,airplaneType);
+		}
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -893,7 +966,6 @@ object Handler {
 				select = select.substring(0, select.length()-4); //remove last "or"
 				select+=")";
 			}
-			println(select);
 			if(!select.equals(""))
 				result = getCodes("Select idAirport from airport where " + select);
 			else
@@ -905,7 +977,7 @@ object Handler {
 			var result = List[Int]();
 			val ids = getAirplaneTypeIds(airplaneType);
 			for(Id <- ids) {
-				result = getIds("Select seatNumber from seat where airplaneType='" + (Id+"") + "'") ::: result;
+				result = getIds("Select seatNumber from seat where idAirplaneType='" + (Id+"") + "'") ::: result;
 			}
 			return result;
 	}
