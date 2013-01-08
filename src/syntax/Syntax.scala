@@ -93,14 +93,23 @@ case class RemoveFlightTime(flightTimeSelector:FlightTime) extends Operation
 //## Types
 case class AirplaneType(name:Opt[String]) extends Type;
 case class AirplaneType_data(name:String) extends Type;
-case class Seat(number:Opt[Int], seatType:Opt[String]) extends Type;
+abstract sealed class Seat_change extends Type;
+	// default value for amt is 1
+	// seatTypeChange is typeChange when parsing
+case class Seat_change1(number:Int, amt:Opt[Int], seatTypeChange:String) extends Seat_change;
+	// seatTypeSelect is typeSelect when parsing
+	// seatTypeChange is typeChange when parsing
+case class Seat_change2(seatTypeSelect:Opt[String], seatTypeChange:String) extends Seat_change;
 	// Number specifies the seat number.
 	//		The default value of the seat number is [highest seat number in airplane type so far] + 1
 	// Amt specifies the amount of seats created.
 	//		If number is 10 and amt 10, we create seats with numbers 10 to 19.
 	//		The default value of amt is 1.
 	// type specifies the seat type
-case class Seat_remove(number:Opt[Int], amt:Opt[Int], seatType:Opt[String]) extends Type;
+abstract sealed class Seat_remove extends Type;
+case class Seat_remove1(number:Int, amt:Opt[Int]) extends Seat_remove;
+	// seatType is type when parsing
+case class Seat_remove2(seatType:Opt[String]) extends Seat_remove;
 case class Seat_data(number:Opt[Int], amt:Opt[Int], seatType:String) extends Type;
 
 
@@ -147,14 +156,14 @@ case class AddSeats(airplaneTypeSelector:AirplaneType, data:List[Seat_data]) ext
  */
 // Corresponds to removal of all seats followed by adding the list in data.
 //CHANGE SEAT ALSO PROVIDED
-case class ChangeSeatsTo(airplaneTypeSelector:AirplaneType, data:List[Seat_data]) extends Operation
+case class ChangeSeatsTo(airplaneTypeSelector:AirplaneType, data:List[Seat_change]) extends Operation
 /* 
  * CHANGE SEATS OF AIRPLANE TYPE {
  * 		name: "Boeing 707"
  * } TO [
- *		{ amt: 100, type: business }
- * 		{ amt: 150, type: economy }
- * 		{ amt: 50 , type: first}
+ *		{ numer: 1, amt: 100, type: business }
+ * 		{ numer: 101, amt: 150, type: economy }
+ * 		{ number: 251, amt: 50 , type: first}
  * ]
  */
 //REMOVE SEAT ALSO PROVIDED
@@ -344,7 +353,7 @@ case class Period(
     contained:Opt[ContainedPeriod],
     from:Opt[Date],
     to:Opt[Date],
-    day:Opt[String],
+    weekday:Opt[String],
     startTime:Opt[Time]) extends Type;
 case class Period_data(
     from:Opt[Date],
