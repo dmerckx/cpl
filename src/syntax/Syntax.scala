@@ -282,7 +282,6 @@ case class Flight3(
     airplaneType: Opt[AirplaneType],
     duringInterval: TimePeriod) extends Flight;
 case class Flight_change( // Flight_change is like Flight but doesn't have duringInterval 
-    template: Opt[Template],
     departure: Opt[DateTime],
     arrival: Opt[DateTime],
     airplaneType: Opt[AirplaneType]) extends Flight;
