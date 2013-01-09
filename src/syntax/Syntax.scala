@@ -412,9 +412,9 @@ sealed abstract class SeatInstance_data extends Type;
 case class SeatNumberInstances_data(number: Int, amt: Opt[Int], price : Price) extends SeatInstance_data
 // We want seatType to be parsed as type (type is not available because type is a keyword reserved by Scala)
 case class SeatTypeInstances_data(seatType: String, price: Price) extends SeatInstance_data
-sealed abstract class SeatInstance extends Type;
-case class SeatNumberInstances(number: Int, amt: Opt[Int]) extends SeatInstance
-case class SeatTypeInstances(seatType: String) extends SeatInstance
+//sealed abstract class SeatInstance extends Type;
+//case class SeatNumberInstances(number: Int, amt: Opt[Int]) extends SeatInstance
+//case class SeatTypeInstances(seatType: String) extends SeatInstance
 
 
 //CHANGE SEAT INSTANCE syntax is er nog
