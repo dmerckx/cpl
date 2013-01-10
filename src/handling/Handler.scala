@@ -142,24 +142,24 @@ object Handler {
 		if (name != null) {
 			if(areReferencesTo(name))
 				throw new ExistingReferenceException();
-				execute(remove_City, name);
+			execute(remove_City, name);
 		}
 	}
 
 	def areReferencesTo(name:String) : Boolean = {
-	  var result = false;
-	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+			var result = false;
+			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
 					driver = "com.mysql.jdbc.Driver") withSession {
-			var airportIds = getCodes("select idAirport from (Airport JOIN City ON airport.city=city.idCity) where city.name='" + name + "'");
-			for(Id <- airportIds) {
-			  println("id: " + Id+"");
-			  val airport = Airport(Empty(),Empty(),Filled(Id));
-				if(getTemplateIds(Template(Empty(),Empty(),Filled(airport),Empty(),Empty())).size > 0 || getTemplateIds(Template(Empty(),Empty(),Empty(),Filled(airport),Empty())).size > 0) {
-					result= true;
+				var airportIds = getCodes("select idAirport from (Airport JOIN City ON airport.city=city.idCity) where city.name='" + name + "'");
+				for(Id <- airportIds) {
+					println("id: " + Id+"");
+					val airport = Airport(Empty(),Empty(),Filled(Id));
+					if(getTemplateIds(Template(Empty(),Empty(),Filled(airport),Empty(),Empty())).size > 0 || getTemplateIds(Template(Empty(),Empty(),Empty(),Filled(airport),Empty())).size > 0) {
+						result= true;
+					}
 				}
 			}
-	  }
-	return result;
+			return result;
 	}
 
 	def existsCityName(cityName: String) {
@@ -780,10 +780,10 @@ object Handler {
 	////////////////////////////////////////////////////////////////////////////////
 
 	def insert(flight:Flight_data) = {
-	  if(getTemplateIds(flight.template).size > 1)
-		  throw new NonUniqueTemplateException();
+		if(getTemplateIds(flight.template).size > 1)
+			throw new NonUniqueTemplateException();
 		if(getTemplateIds(flight.template).size == 0)
-		  throw new NoSuchTemplateException();
+			throw new NoSuchTemplateException();
 		var arrivalTime = extractArrivalTime(flight);
 		var airplaneTypes = extractAirplaneTypes(flight);
 		var insert = "`cancelled`, `departure`";
@@ -845,13 +845,13 @@ object Handler {
 		if(!areExistingSeatTypes(prices))
 			throw new NoSuchSeatTypeException();
 		//TODO
-//		extractAirplaneTypes(flight);
-//		
-//		if(!areCorrespondingSeats(prices, ))
-//			throw new NoCorrespondingSeatsException();
-//		
-//		addFlight(flight);
-//		
+		//		extractAirplaneTypes(flight);
+		//		
+		//		if(!areCorrespondingSeats(prices, ))
+		//			throw new NoCorrespondingSeatsException();
+		//		
+		//		addFlight(flight);
+		//		
 		//		
 		//		for (seat <- prices) {
 		//			var priceVal = extractPrice(seat);
@@ -861,8 +861,65 @@ object Handler {
 
 	def changeFlight(flightSelector:Flight, changeFlight:Flight_change) {
 
+		// make flights of the given timeperiod and template(if present)
+		initFlights(flightSelector);
+		// select necessary flights from actual flight view
+//		getFlightIds(flightSelector);
+		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
+			(Q.u + makeUpdateQuery(getFlightIds(flightSelector),changeFlight)).execute;
+		}
+		// make changes
+		//TODO
 	}
 
+	def makeUpdateQuery(idsToUpdate:List[Int],flight:Flight_change) : String = {
+		var airplaneType: AirplaneType = getAirplaneType(flight);
+		var departure:DateTime = getDeparture(flight);
+		var arrival:DateTime = getArrival(flight);
+		var update = "update Flight set ";
+		if(arrival != null) {
+//		  update += 
+		}
+	return "";
+	}
+	
+	def initFlights(flightSelector:Flight) {
+		var timePeriod: TimePeriod = getTimePeriod(flightSelector);
+	var template: Template = getTemplate(flightSelector);
+	var departure:DateTime = getDeparture(flightSelector);
+	var arrival:DateTime = getArrival(flightSelector);
+	var templateIds = List[TemplateId]();
+	
+	if(template != null) 
+		templateIds = getTemplateIds(template);
+	else {
+		//match all templates
+		templateIds = getTemplateIds(Template(Empty(),Empty(),Empty(),Empty(),Empty()))
+	}
+	initFlights(templateIds, getMostRestrictiveTimePeriod(departure, arrival, timePeriod));
+	}
+
+	def getMostRestrictiveTimePeriod(departure:DateTime,arrival:DateTime,timePeriod:TimePeriod) : TimePeriod = {
+	  //TODO could check if the departure and or arrival is contained in the given timeperiod
+	  if(timePeriod != null)
+	    return timePeriod;
+	  if(departure != null)
+	    return TimePeriod(departure,departure);
+	  if(arrival != null)
+	    return TimePeriod(arrival,arrival);
+	  return null;
+	}
+	
+	def initFlights(templateIds:List[TemplateId],timePeriod:TimePeriod) {
+			for(Id <- templateIds) {
+			  println(Id);
+			  val query = "call generate_template_flights('" + Id.idAirline +"','" + (Id.idTemplate+"") + "','" + (getDateTime(timePeriod.from)) +"','" + getDateTime(timePeriod.to) +"')";
+			  println(query);
+			  execute(query);
+			}
+	}
+	
 	def removeFlight(flightSelector:Flight) {
 
 	}
@@ -870,6 +927,88 @@ object Handler {
 	////////////////////////////////////////////////////////////////////////////////
 	// Database ////////////
 	////////////////////////////////////////////////////////////////////////////////	
+
+	def getTemplate(flight:Flight) : Template = {
+	  flight match {
+	  		case Flight1(Filled(t), _,_,_,_) => return t;
+	  		case Flight2(Filled(t),_,_,_,_) => return t;
+	  		case Flight3(Filled(t),_,_,_,_) => return  t;
+	  		case _ => return null;
+	  }
+	}
+	
+	def getDeparture(flight:Flight) : DateTime = {
+	  flight match {
+	  		case Flight1(_,d,_,_,_) => return d;
+	  		case Flight2(_,Filled(d),_,_,_) => return d;
+	  		case Flight3(_,Filled(d),_,_,_) => return d;
+	  		case _ => return null;
+	  }
+	}
+	
+	def getArrival(flight:Flight) : DateTime = {
+	  flight match {
+	  		case Flight1(_,_,Filled(ar),_,_) => return ar;
+	  		case Flight2(_,_,ar,_,_) => return ar;
+	  		case Flight3(_,_,Filled(ar),_,_) => return ar;
+	  		case _ => return null;
+	  }
+	}
+	
+	def getAirplaneType(flight:Flight) : AirplaneType = {
+	  flight match {
+	  		case Flight1(_,_,_,Filled(ai),_) => return ai;
+	  		case Flight2(_,_,_,Filled(ai),_) => return ai;
+	  		case Flight3(_,_,_,Filled(ai),_) => return ai;
+	  		case _ => return null;
+	  }
+	}
+	
+	def getTimePeriod(flight:Flight) : TimePeriod =  {
+	  flight match {
+	  		case Flight1(_,_,_,_,Filled(du)) => return du;
+	  		case Flight2(_,_,_,_,Filled(du)) => return du;
+	  		case Flight3(_,_,_,_,du) => return du;
+	  		case _ => return null;
+	  }
+	}
+	
+	def getFlightIds(flight:Flight) : List[Int] =  {
+			var template: Template = getTemplate(flight);
+	var departure: DateTime = getDeparture(flight);
+	var arrival: DateTime = getArrival(flight);
+	var airplaneType: AirplaneType = getAirplaneType(flight);
+	var timePeriod: TimePeriod = getTimePeriod(flight);
+	
+	var where = "";
+	if(departure != null)
+		where += "departure='" + getDateTime(departure) + "'";
+	if(arrival != null) {
+		if(!where.equals(""))
+			where += " and ";
+		where += "arrival='" + getDateTime(arrival) + "'";
+	}
+	if(airplaneType != null) {
+		var ids = getAirplaneTypeIds(airplaneType);
+		if(!where.equals("")&& ids.size>=1)
+			where += " and (";
+		ids.foreach(id =>  where += "idAirplaneType='" + id + "' or ");
+		if(ids.size>=1)
+			where = where.substring(0, where.length()-4);
+		where += ")";
+	}
+	if(timePeriod != null) {
+		if(!where.equals(""))
+			where += " and ";
+		where += "(departure >'" + getDateTime(timePeriod.from) + "' and departure <'" + getDateTime(timePeriod.to) +"')";
+	}
+	if(!where.equals(""))  
+		where = "select idFlight from ActualFlight where " + where;
+	else
+		where =  "select idFlight from ActualFlight";
+	println("getFlightids selector: " + where);
+	return getIds(where);
+	}
 
 	def getTemplateIds(template:Template) : List[TemplateId] = {
 			var result = List[TemplateId]();
@@ -1054,6 +1193,13 @@ object Handler {
 		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
 				driver = "com.mysql.jdbc.Driver") withSession {
 			func(data);
+		}
+	}
+
+	def execute(query:String) {
+		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
+			(Q.u + query).execute
 		}
 	}
 
