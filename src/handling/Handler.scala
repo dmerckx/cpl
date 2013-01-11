@@ -910,7 +910,7 @@ object Handler {
 	  }
 	}
 	
-	def priceToDouble(price: Price) : Double = {
+	def priceToDouble(price: syntax.Price) : Double = {
 	  var result = 0d;
 	  price match {
 	  	case Dollar(Filled(dollar), Filled(cent)) => result = dollar + cent/100;
