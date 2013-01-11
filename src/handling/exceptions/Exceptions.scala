@@ -67,5 +67,11 @@ case class NoSuchAirplaneTypeException() extends Exception
 case class NonUniqueNewAirplaneTypeException() extends Exception
 case class NoSuchNewAirplaneTypeException() extends Exception
 case class IllegalArrivalTimeException() extends Exception
+
+//SEATINSTANCES
+case class SeatNumberOutOfRangeException() extends Exception
+case class OverlappingSeatInstancesException() extends Exception
+case class SameSeatTypesException() extends Exception
+
 class Exceptions {
 }
