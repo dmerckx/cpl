@@ -11,7 +11,7 @@ import syntax._
 @RunWith(classOf[JUnitRunner])
 class Tests extends FunSuite with ShouldMatchers {
 
-	
+  
     def parseSucces(expr:String, outp: => Operation) {
     	test("parse expression: " + expr + " <--> " + outp) {
         	val out = outp
@@ -113,10 +113,39 @@ class Tests extends FunSuite with ShouldMatchers {
 			       Empty())))
   
    //-----Uit de opgave----
-   parseSuccesAndPrint("ADD TEMPLATE {" +
+			       
+   parseSuccesAndPrint("ADD FLIGHT TIME{" +
+	"      from: {name: \"Brussels airport\"},"+
+	"      to: {name: Edinburgh},"+
+	"      airplaneType: {name: \"Boeing 727\"},"+
+	"      time: {h: 1, m: 22}"+
+	" }",
+		AddFlightTime(
+		    FlightTime_data(
+		       Airport(Empty(), Filled("Brussels airport"), Empty()),
+		       Airport(Empty(), Filled("Edinburgh"), Empty()),
+		       AirplaneType(Filled("Boeing 727")),
+		       Time(Filled(1), Filled(22), Empty())
+		    )
+		))
+		
+    parseSucces("ADD DISTANCE{" +
+	"      from: {name: \"Brussels airport\"},"+
+	"      to: {name: Edinburgh},"+
+	"      dist: 1000"+
+	" }",
+		AddDist(
+		    Dist_data(
+		       Airport(Empty(), Filled("Brussels airport"), Empty()),
+		       Airport(Empty(), Filled("Edinburgh"), Empty()),
+		       1000
+		    )
+		))
+			       
+   parseSucces("ADD TEMPLATE {" +
    	"	  fln: BM1628,"+
 	"      from: {name: \"Brussels airport\"},"+
-	"      to: {name: Edinburh},"+
+	"      to: {name: Edinburgh},"+
 	"      airplaneType: {name: \"Boeing 727\"}"+
 	"  } WITH SEAT INSTANCES ["+
 	"      {type: economy, price: {euro: 210}},"+
@@ -130,7 +159,7 @@ class Tests extends FunSuite with ShouldMatchers {
 		   Template_data(
 		       "BM1628",
 		       Airport(Empty(), Filled("Brussels airport"), Empty()),
-		       Airport(Empty(), Filled("Edinburh"), Empty()),
+		       Airport(Empty(), Filled("Edinburgh"), Empty()),
 		       AirplaneType(Filled("Boeing 727"))
 		       ),
 		   List(
@@ -142,7 +171,7 @@ class Tests extends FunSuite with ShouldMatchers {
 		       Period_data(Empty(), Empty(), Filled("wednesday"), Time(Filled(9),Filled(55),Empty())),
 		       Period_data(Empty(), Empty(), Filled("friday"), Time(Filled(9),Filled(55),Empty()))
 		   )
-		));
+		))
 		
 	/*	+
 	"  CHANGE SEAT INSTANCES OF FLIGHT {"+
@@ -172,147 +201,3 @@ class Tests extends FunSuite with ShouldMatchers {
 //		   		Prices1(100, List(1, 2)))
     			
 }
-//package parser;
-//
-//import org.scalatest.junit.JUnitRunner
-//import org.junit.runner.RunWith
-//import org.scalatest.matchers.ShouldMatchers
-//import org.scalatest.FunSuite
-//import syntax.Operation
-//import syntax._;
-//
-//@RunWith(classOf[JUnitRunner])
-//class Tests extends FunSuite with ShouldMatchers {
-//
-//	
-//    def parseSucces(expr:String, outp: => Operation) {
-//    	test("parse expression: " + expr + " <--> " + outp) {
-//        	val out = outp
-//            val e:Operation = Parser.parse(expr) match{
-//        	  case PSucces(o) => o
-//        	  case PFail(msg) =>
-//        	    fail("'parse failed: " + msg + "'")
-//        	}
-//        	println(e.toString());
-//        	println(outp.toString());
-//        	
-//        	if(!e.toString().equals(outp.toString()))
-//        	  fail("expressions not equal");
-//        }
-//    }
-//    
-//    def parseFail(expr:String, outp: => Operation) {
-//    	test("fail parse expression: " + expr + " <--> " + outp) {
-//        	val out = outp
-//            val e:Operation = Parser.parse(expr) match{
-//        	  case PSucces(o) => o
-//        	  case PFail(msg) =>
-//        	    fail("'parse failed: " + msg + "'")
-//        	}
-//        	println(e.toString());
-//        	println(outp.toString());
-//        	
-//        	if(e.toString().equals(outp.toString()))
-//        	  fail("expressions are equal, but they should not be");
-//        }
-//    }
-//   
-//   //-----Simple expression
-//    //Simple tests
-//   parseSucces("ADD CITY {name:\"Brussels\", short:BRU}",
-//    			AddCity(City_data("Brussels", "BRU"))) 
-//   parseSucces("ADD CITY {name:Malinas, short:MAL}",
-//    			AddCity(City_data("Malinas", "MAL")))
-//    //Reverse order
-//   parseSucces("ADD CITY {short:MAL, name:Malinas}",
-//    			AddCity(City_data("Malinas", "MAL")))
-//    			
-//    			
-//   //-----Expression with nested type & optional parameters
-//    //Standard tests
-//   parseSucces("ADD AIRPORT {name:Brussels_Airport, city:{name:brussels, short:bru}, short:BRU}",
-//    			AddAirport(Airport_data(City1("brussels",Filled("bru")),"Brussels_Airport","BRU")))
-//   parseSucces("ADD AIRPORT {name:Brussels_Airport, city:{short:bru}, short:BRU}",
-//    			AddAirport(Airport_data(City2("bru"),"Brussels_Airport","BRU")))
-//    //Optional parameters unfilled
-//   parseSucces("ADD AIRPORT {name:Brussels_Airport, city:{name:brussels}, short:BRU}",
-//    			AddAirport(Airport_data(City1("brussels",Empty()),"Brussels_Airport","BRU")))
-//    //Reverse order
-//   parseSucces("ADD AIRPORT {city:{short:bru}, short:BRU, name:Brussels_Airport}",
-//    			AddAirport(Airport_data(City2("bru"),"Brussels_Airport","BRU")))
-//   parseSucces("ADD AIRPORT {name:Brussels_Airport, short:BRU, city:{short:bru}}",
-//    			AddAirport(Airport_data(City2("bru"),"Brussels_Airport","BRU")))
-//    			
-//}
-//package parser;
-//
-//import org.scalatest.junit.JUnitRunner
-//import org.junit.runner.RunWith
-//import org.scalatest.matchers.ShouldMatchers
-//import org.scalatest.FunSuite
-//import syntax.Operation
-//import syntax._;
-//
-//@RunWith(classOf[JUnitRunner])
-//class Tests extends FunSuite with ShouldMatchers {
-//
-//	
-//    def parseSucces(expr:String, outp: => Operation) {
-//    	test("parse expression: " + expr + " <--> " + outp) {
-//        	val out = outp
-//            val e:Operation = Parser.parse(expr) match{
-//        	  case PSucces(o) => o
-//        	  case PFail(msg) =>
-//        	    fail("'parse failed: " + msg + "'")
-//        	}
-//        	println(e.toString());
-//        	println(outp.toString());
-//        	
-//        	if(!e.toString().equals(outp.toString()))
-//        	  fail("expressions not equal");
-//        }
-//    }
-//    
-//    def parseFail(expr:String, outp: => Operation) {
-//    	test("fail parse expression: " + expr + " <--> " + outp) {
-//        	val out = outp
-//            val e:Operation = Parser.parse(expr) match{
-//        	  case PSucces(o) => o
-//        	  case PFail(msg) =>
-//        	    fail("'parse failed: " + msg + "'")
-//        	}
-//        	println(e.toString());
-//        	println(outp.toString());
-//        	
-//        	if(e.toString().equals(outp.toString()))
-//        	  fail("expressions are equal, but they should not be");
-//        }
-//    }
-//   
-//   //-----Simple expression
-//    //Simple tests
-//   parseSucces("ADD CITY {name:\"Brussels\", short:BRU}",
-//    			AddCity(City_data("Brussels", "BRU"))) 
-//   parseSucces("ADD CITY {name:Malinas, short:MAL}",
-//    			AddCity(City_data("Malinas", "MAL")))
-//    //Reverse order
-//   parseSucces("ADD CITY {short:MAL, name:Malinas}",
-//    			AddCity(City_data("Malinas", "MAL")))
-//    			
-//    			
-//   //-----Expression with nested type & optional parameters
-//    //Standard tests
-//   parseSucces("ADD AIRPORT {name:Brussels_Airport, city:{name:brussels, short:bru}, short:BRU}",
-//    			AddAirport(Airport_data(City1("brussels",Filled("bru")),"Brussels_Airport","BRU")))
-//   parseSucces("ADD AIRPORT {name:Brussels_Airport, city:{short:bru}, short:BRU}",
-//    			AddAirport(Airport_data(City2("bru"),"Brussels_Airport","BRU")))
-//    //Optional parameters unfilled
-//   parseSucces("ADD AIRPORT {name:Brussels_Airport, city:{name:brussels}, short:BRU}",
-//    			AddAirport(Airport_data(City1("brussels",Empty()),"Brussels_Airport","BRU")))
-//    //Reverse order
-//   parseSucces("ADD AIRPORT {city:{short:bru}, short:BRU, name:Brussels_Airport}",
-//    			AddAirport(Airport_data(City2("bru"),"Brussels_Airport","BRU")))
-//   parseSucces("ADD AIRPORT {name:Brussels_Airport, short:BRU, city:{short:bru}}",
-//    			AddAirport(Airport_data(City2("bru"),"Brussels_Airport","BRU")))
-//    			
-//}

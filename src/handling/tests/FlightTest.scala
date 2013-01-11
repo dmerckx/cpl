@@ -30,20 +30,22 @@ object FlightTest {
 //	  Handler.handle(AddFlight(Flight_data(template3,departure,Empty(),Filled(AirplaneType(Filled("BOEING777"))))));
 	  var date = Date(1,5,2014);
 	  var time = Time(Filled(15),Filled(15),Filled(16));
+	  var timeChange = Time(Filled(15),Filled(15),Filled(18));
 	  var dateFrom = DateTime(Date(20,3,2013),Empty());
-	  var dateTo = DateTime(Date(20,3,2014),Empty());
+	  var dateTo = DateTime(Date(20,3,2012),Empty());
 	  var period = TimePeriod(dateFrom,dateTo);
+	  var airplaneType = AirplaneType(Filled("BOEING747"));
 	  var flightSelector1 = Flight1(Filled(template1),DateTime(date,Filled(time)),Empty(),Empty(),Empty());
 	  var flightSelector2 = Flight3(Filled(template1),Empty(),Empty(),Empty(),period);
 	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
 					driver = "com.mysql.jdbc.Driver") withSession {
-		  Handler.getFlightIds(flightSelector1).foreach(id => println(id));
-		  Handler.handle(ChangeFlight(flightSelector1,Flight_change(Empty(),Empty(),Empty())));
-		  Handler.getFlightIds(flightSelector1).foreach(id => println(id));
+		  Handler.getFlightIds(flightSelector1).foreach(id => println("flightid of selector 1 before changing: " + id));
+		  Handler.handle(ChangeFlight(flightSelector1,Flight_change(Empty(),Empty(),Filled(airplaneType))));
+		  Handler.getFlightIds(flightSelector1).foreach(id => println("flightid of selector 1 after changing: " + id));
 		  
-//		  Handler.getFlightIds(flightSelector2).foreach(id => println(id));
-//		  Handler.handle(ChangeFlight(flightSelector2,Flight_change(Empty(),Empty(),Empty())));
-//		  Handler.getFlightIds(flightSelector2).foreach(id => println(id));
+//		  Handler.getFlightIds(flightSelector2).foreach(id => println("flight id of selector 2 before: " + id));
+//		  Handler.handle(ChangeFlight(flightSelector2,Flight_change(Empty(),Empty(),Filled(airplaneType))));
+//		  Handler.getFlightIds(flightSelector2).foreach(id => println("flight id of selector 2 after: " + id));
 	  }
 	}
 
