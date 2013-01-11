@@ -9,9 +9,82 @@ case class Empty[T] extends Opt[T]
 case class Filled[T](t:T) extends Opt[T]
 
 // Helper types
-case class Time(h: Opt[Int], m: Opt[Int], s: Opt[Int]) extends Type;
-case class Date(d:Int, m:Int, y:Int) extends Type;
-case class DateTime(date:Date, time:Opt[Time]) extends Type;
+case class Time(h: Opt[Int], m: Opt[Int], s: Opt[Int]) extends Type {
+  def compare(that:Time) : Int = {
+    if(getTotalTime(Time(h,m,s)) > getTotalTime(that))
+        return 1;
+    if(getTotalTime(Time(h,m,s)) < getTotalTime(that))
+        return -1;
+    else
+       return 0;
+  }
+  
+  def getTotalTime(time:Time) : Int = {
+    return getHour(time)*3600+getMinutes(time)*60+getSeconds(time);
+  }
+  
+  def getHour(time:Time) : Int = {
+    time match {
+      case Time(Filled(hour),_,_) => return hour;
+      case _ => return 0;
+    }
+  }
+  
+  def getMinutes(time:Time) : Int = {
+    time match {
+      case Time(_,Filled(min),_) => return min;
+      case _ => return 0;
+    }
+  }
+  
+   def getSeconds(time:Time) : Int = {
+    time match {
+      case Time(_,_,Filled(sec)) => return sec;
+      case _ => return 0;
+    }
+  }
+  
+}
+case class Date(d:Int, m:Int, y:Int) extends Type {
+  
+  def compare(that:Date) : Int =  {
+    if(y > that.y)
+        return 1;
+     if(y < that.y)
+        return -1;
+    if(m > that.m)
+       return 1;
+    if(m < that.m)
+       return -1;
+    if(d < that.d)
+        return -1;
+     if(d > that.d)
+        return 1;
+    else
+      return 0;
+  }
+  
+}
+case class DateTime(date:Date, time:Opt[Time]) extends Type {
+  def compare(that: DateTime): Int = {
+    var dateComp = date.compare(that.date);
+    if(dateComp != 0)
+      return dateComp;
+   that.time match {
+     case Filled(t1) =>
+       time match {
+         case Filled(t2) => return t2.compare(t1);
+         case Empty() => return t1.compare(Time(Empty(),Empty(),Empty()));
+       }
+     case Empty() =>
+       time match {
+         case Filled(t2) => return t2.compare(Time(Empty(),Empty(),Empty()));
+         case Empty() => return 0;
+       }
+   }
+  }
+  
+}
 
 sealed abstract class Price extends Type
 case class Dollar(dollar : Opt[Int], cent : Opt[Int]) extends Price;
