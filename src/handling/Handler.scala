@@ -29,6 +29,8 @@ object Handler {
 	 * Main method of the handler. All output of the parser will be processed by this method to be mapped on an actual database operation.
 	 */
 	def handle(op: Operation) = {
+	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
 		op match {
 			//CITY
 		case AddCity(data) => addCity(data);
@@ -70,11 +72,12 @@ object Handler {
 		//Template
 		case AddTemplate(template, prices, periods) => addTemplate(template,prices,periods);
 		case AddTemplatePeriods(template,periods) => addTemplatePeriods(template,periods);
-
+		case ChangeTemplate(template, change) => changeTemplate(template,change);
 		case AddSeats(airplaneType, seat_datas) => addSeats(airplaneType,seat_datas);
 		
 		//SEAT INSTANCES
 		case ChangeFlightSeatInstancesTo(flight,seatInstances_data) => changeFlightSeatInstancesTo(flight,seatInstances_data);
+		 }
 		}
 	}
 
@@ -467,6 +470,123 @@ object Handler {
 				extractSeatNumbers(seat, template.airplaneType).foreach(seatNb => (Q.u + "insert into seatinstancetemplate(`idAirline`,`idTemplate`,`seatnumber`,`idAirplanetype`,`price`) values ('" + airlineId + "','" + (templateId+"") + "','" + (seatNb+"") + "','" + (typeId+"") + "','" + (priceVal+"") +"')").execute)
 			}
 		}
+	}
+	
+	def commafy(columns : List[String], values: List[String]) : String = {
+	  if (columns.size != values.size)
+	    throw new IllegalArgumentException;
+	  commafy((columns,values).zipped.map((a,b) => "`"+a+"` = '" + b +"'"));
+	}
+	
+//	def orify(columns : List[String], values: List[String]) : String = {
+//	  if (columns.size != values.size)
+//	    throw new IllegalArgumentException;
+//	  orify((columns,values).zipped.map((a,b) => "`"+a+"` = '" + b +"'"));
+//	}
+	
+	def orify(list : List[String]) : String = {
+	  		val sb : StringBuilder = new StringBuilder;
+		if (list.size < 1) {
+		  return "";
+		}
+		var listi = list;
+	  	while(list.size > 1) {
+	  	  sb.append(list.head.toString)
+	  	  sb.append(" OR ")
+	  	  listi = listi.tail;
+	  	}
+	  	return sb.toString;
+	}
+	
+	def commafy(list : List[String]) : String = {
+		val sb : StringBuilder = new StringBuilder;
+		if (list.size < 1) {
+		  return "";
+		}
+		var listi = list;
+	  	while(list.size > 1) {
+	  	  sb.append(list.head.toString)
+	  	  sb.append(", ")
+	  	  listi = listi.tail;
+	  	}
+	  	return sb.toString;
+	}
+	
+	def changeTemplate(template:Template, change:Template_change) = {
+	  val templateIds : List[handling.TemplateId] = getTemplateIds(template);
+	  val nrTemplateIds = templateIds.size;
+	  var airplaneTypeChange = false;
+	  if (nrTemplateIds >= 1) {
+		  var columns = List[String]();
+		  var values = List[String]();
+		  change match {
+		    case Template_change(Filled(fln),_,_,_) => 
+		      if (nrTemplateIds > 1)
+		        throw new NonUniqueTemplateException();
+		      val templateIdsChange = getTemplateIdFromFLN(fln);
+		      if (templateIdsChange.size > 1)
+		        throw new NonUniqueTemplateException();
+		      if (templateIdsChange.size < 1)
+		        throw new NoSuchTemplateException();
+		      columns = "idTemplate" :: columns
+		      values = templateIds.head.idTemplate.toString :: values
+		      columns = "idAirline" :: columns
+		      values = templateIds.head.idAirline.toString :: values
+		    case _ =>
+		  }
+		  change match {
+		    case Template_change(_,Filled(from),_,_) => 
+		      val fromIds = getAirportIds(from);
+		      if (fromIds.size > 1)
+		        throw new NonUniqueFromAirport();
+		      if (fromIds.size < 1)
+		        throw new NoSuchFromAirport();
+		      columns = "idAirportFrom" :: columns;
+		      values = fromIds.head.toString :: values;
+		    case _ => // do nothing
+		  }
+		  change match {
+		    case Template_change(_,_,Filled(to),_) => ;
+		      val toIds = getAirportIds(to);
+		      if (toIds.size > 1)
+		        throw new NonUniqueToAirport();
+		      if (toIds.size < 1)
+		        throw new NoSuchFromAirport();
+		      columns = "idAirportTo" :: columns;
+		      values = toIds.head.toString :: values;
+		    case _ => // do nothing
+	      }
+		  change match {
+		    case Template_change(_,_,_,Filled(airplaneType)) => 
+		      val atIds = getAirplaneTypeIds(airplaneType);
+		      if (atIds.size > 1)
+		        throw new NonUniqueAirplaneTypeException();
+		      if (atIds.size < 1)
+		        throw new NoSuchAirplaneTypeException();
+		      columns = "idAirplaneType" :: columns;
+		      values = atIds.head.toString :: values;
+		      airplaneTypeChange = true;
+		    case _ => // do nothing
+		  }
+		  //Update all the templates that are matched with the values that
+		  //are filled in.
+		  val sqlQuery = 
+		    "UPDATE TEMPLATE SET " +
+		    	commafy(columns,values) +
+	    		" WHERE (" +
+				  orify(templateIds.map(t => 
+				    "("+
+				    	"`idAirline`= '" + t.idAirline + "'"+
+				    	" AND "+
+				    	"`idTemplate` = '" + t.idTemplate + "'"+
+			    	")")) +
+		    	")";
+		  execute(sqlQuery);
+		  //Update the prices of the seat instances in case of changed airplane type
+		  if (airplaneTypeChange)
+		    templateIds.foreach(t => 
+		      execute("CALL update_seat_instance_templates("+t.idAirline + "," + t.idTemplate + ")"));
+	  }
 	}
 
 	def areCorrespondingSeats(arrangement:List[SeatInstance_data], airplaneType:AirplaneType) : Boolean = {
