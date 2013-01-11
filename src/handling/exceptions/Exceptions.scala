@@ -65,7 +65,8 @@ case class NoSuchAirplaneTypeException() extends Exception
 
 //SEATINSTANCES
 case class SeatNumberOutOfRangeException() extends Exception
-
+case class OverlappingSeatInstancesException() extends Exception
+case class SameSeatTypesException() extends Exception
 
 class Exceptions {
 }

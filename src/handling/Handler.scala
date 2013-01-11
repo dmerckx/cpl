@@ -59,6 +59,7 @@ object Handler {
 		case AddDist(distance) => addDist(distance);
 
 		//FLIGHTTIME
+		case AddFlightTime(flightTime) => addFlightTime(flightTime);
 
 		//Flight
 		case AddFlight(flight) => addFlight(flight);
@@ -71,6 +72,9 @@ object Handler {
 		case AddTemplatePeriods(template,periods) => addTemplatePeriods(template,periods);
 
 		case AddSeats(airplaneType, seat_datas) => addSeats(airplaneType,seat_datas);
+		
+		//SEAT INSTANCES
+		case ChangeFlightSeatInstancesTo(flight,seatInstances_data) => changeFlightSeatInstancesTo(flight,seatInstances_data);
 		}
 	}
 
@@ -780,16 +784,84 @@ object Handler {
 	// Seat Instances /////////
 	////////////////////////////////////////////////////////////////////////////////
 	
+	def changeFlightSeatInstancesTo(flight: Flight, seatInstances: List[SeatInstance_data]) {
+	  if (hasOverlappingSeatNumbers(seatInstances)) {
+	    throw new OverlappingSeatInstancesException();
+	  }
+	  if (hasSameSeatTypes(seatInstances)) {
+	    throw new SameSeatTypesException();
+	  }
+	  for (s <- seatInstances) {
+	    s match {
+	      case SeatNumberInstances_data(n,amt,p) => changeFlightSeatInstances(flight,SeatNumberInstances_data(n,amt,p))
+	      case SeatTypeInstances_data(t,p) => changeFlightSeatInstances(flight,SeatTypeInstances_data(t,p))
+	    }
+	  }
+	}
 	
-	def changeSeatInstances(flight: Flight, seatInstances: SeatNumberInstances_data) {
-	  val price = seatInstances.price;
-	  val flightNumbers = getFlightIds(flight);	  
+	def hasOverlappingSeatNumbers(seatInstances: List[SeatInstance_data]) : Boolean = {
+	  val nbInstances = seatInstances.size;
+	  for (i <- 0 to nbInstances - 1) {	    
+	    seatInstances(i) match {
+	      case SeatNumberInstances_data(n,amt,p) => {
+	        val firstSeatNumber1 = n;
+	        val lastSeatNumber1 = getLastSeatNumber(SeatNumberInstances_data(n,amt,p));
+	        for (j <- i + 1 to nbInstances - 1) {
+	          seatInstances(j) match {
+	            case SeatNumberInstances_data(n2,amt2,p2) => {
+	              val firstSeatNumber2 = n2;
+	              val lastSeatNumber2 = getLastSeatNumber(SeatNumberInstances_data(n2,amt2,p2));
+	              if (!(firstSeatNumber1 > lastSeatNumber2 || firstSeatNumber2 > lastSeatNumber1)) {
+	                return true;
+	              }
+	            }
+	            case SeatTypeInstances_data(_,_) => 
+	          }
+	        }
+	      }
+	      case SeatTypeInstances_data(_,_) =>
+	    }
+	  }
+	  return false;
+	}
+	
+	def hasSameSeatTypes(seatInstances: List[SeatInstance_data]) : Boolean = {
+	  val nbInstances = seatInstances.size;
+	  for (i <- 0 to nbInstances - 1) {
+	    seatInstances(i) match {
+	      case SeatTypeInstances_data(t,_) => {
+	        for (j <- i + 1 to nbInstances - 1) {
+	          seatInstances(j) match {
+	            case SeatTypeInstances_data(t2,_) => {
+	              if (t.equals(t2)) {
+	                return true
+	              }
+	            }
+	            case SeatNumberInstances_data(_,_,_) => 
+	          }
+	        }
+	      }
+	      case SeatNumberInstances_data(_,_,_) => 
+	    }
+	  }
+	  return false;
+	}
+	
+	def getLastSeatNumber(seatInstances: SeatNumberInstances_data) : Int = {
 	  val firstSeatNumber = seatInstances.number;
 	  var lastSeatNumber = firstSeatNumber;
 	  seatInstances match {
 	    case SeatNumberInstances_data(_,Filled(amt),_) => lastSeatNumber = firstSeatNumber + amt
 	    case SeatNumberInstances_data(_,Empty(),_) => 
-	  }	  
+	  }
+	  return lastSeatNumber;
+	}
+	
+	def changeFlightSeatInstances(flight: Flight, seatInstances: SeatNumberInstances_data) {
+	  val price = seatInstances.price;
+	  val flightNumbers = getFlightIds(flight);	  
+	  val firstSeatNumber = seatInstances.number;
+	  var lastSeatNumber = getLastSeatNumber(seatInstances);
 	  for (flightId <- flightNumbers) {
 	    val seatNumberIdAirplaneTypeQuery = "SELECT seatNumber,idAirplaneType FROM actualseatinstances WHERE idFlight='" + flightId + "'";
 	    val seatNumberIdAirplaneTypes = getSeatNumberIdAirplaneTypes(seatNumberIdAirplaneTypeQuery);
@@ -805,7 +877,7 @@ object Handler {
 	  }
 	}
 	
-	def changeSeatInstances(flight: Flight, seatInstances: SeatTypeInstances_data) {
+	def changeFlightSeatInstances(flight: Flight, seatInstances: SeatTypeInstances_data) {
 	  val price = seatInstances.price;
 	  val flightNumbers = getFlightIds(flight);
 	  val seatType = seatInstances.seatType;
