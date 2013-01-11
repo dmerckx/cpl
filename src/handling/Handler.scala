@@ -858,40 +858,72 @@ object Handler {
 	}
 	
 	def changeFlightSeatInstances(flight: Flight, seatInstances: SeatNumberInstances_data) {
+	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
 	  val price = seatInstances.price;
 	  val flightNumbers = getFlightIds(flight);	  
 	  val firstSeatNumber = seatInstances.number;
 	  var lastSeatNumber = getLastSeatNumber(seatInstances);
+	  val priceString = priceToDouble(price) + "";
 	  for (flightId <- flightNumbers) {
 	    val seatNumberIdAirplaneTypeQuery = "SELECT seatNumber,idAirplaneType FROM actualseatinstances WHERE idFlight='" + flightId + "'";
 	    val seatNumberIdAirplaneTypes = getSeatNumberIdAirplaneTypes(seatNumberIdAirplaneTypeQuery);
+	    var count = 0;
 	    for (e <- seatNumberIdAirplaneTypes) {
-	      if (!(e.seatNb >= firstSeatNumber && e.seatNb <= lastSeatNumber)) {
-	        throw new SeatNumberOutOfRangeException();
+	      if (e.seatNb >= firstSeatNumber && e.seatNb <= lastSeatNumber) {
+	        count = count + 1;
 	      }
 	    }
-	    for (e <- seatNumberIdAirplaneTypes) {
-	    	val query = "INSERT INTO seatinstance(`idFlight`,`seatNumber`,`idAirplaneType`,`price`) VALUES('" + (flightId+"") + "','" + (e.seatNb+"") + "','" + (e.idAirplaneType+"") + "','" + price + "' " + "ON DUPLICATE KEY UPDATE price=" + price;
-	    	execute(query);
+	    if (count != ((lastSeatNumber - firstSeatNumber) + 1)) {
+	      throw new SeatNumberOutOfRangeException();
 	    }
+	    for (e <- seatNumberIdAirplaneTypes) {
+	      if (e.seatNb >= firstSeatNumber && e.seatNb <= lastSeatNumber) {
+	    	val query = "INSERT INTO seatinstance(`idFlight`,`seatNumber`,`idAirplaneType`,`price`) VALUES('" + (flightId+"") + "','" + (e.seatNb+"") + "','" + (e.idAirplaneType+"") + "','" + priceString + "') " + "ON DUPLICATE KEY UPDATE price=" + priceString;
+	    	//println(query);
+	    	execute(query);
+	      }
+	    }
+	  }
 	  }
 	}
 	
 	def changeFlightSeatInstances(flight: Flight, seatInstances: SeatTypeInstances_data) {
+	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
 	  val price = seatInstances.price;
 	  val flightNumbers = getFlightIds(flight);
 	  val seatType = seatInstances.seatType;
 	  if (count(select("Count(*)","SeatType","name='" + seatType + "'")) < 1) {
 	    throw new NoSuchSeatTypeException();
 	  }
+	  val priceString = priceToDouble(price) + "";
 	  for (flightId <- flightNumbers) {
-	    val seatNumberIdAirplaneTypeQuery = "SELECT seatNumber,idAirplaneType FROM actualseatinstances WHERE idFlight='" + flightId + "' AND idSeatType='" + (seatType+"") + "'";
+	    val seatNumberIdAirplaneTypeQuery = "SELECT seatNumber,idAirplaneType FROM actualseatinstances WHERE idFlight='" + flightId + "' AND seatTypeName='" + (seatType+"") + "'";
+	    //println(seatNumberIdAirplaneTypeQuery);
 	    val seatNumberIdAirplaneTypes = getSeatNumberIdAirplaneTypes(seatNumberIdAirplaneTypeQuery);
+	    //println(seatNumberIdAirplaneTypes.size);
 	    for (e <- seatNumberIdAirplaneTypes) {
-	      val query = "INSERT INTO seatinstance(`idFlight`,`seatNumber`,`idAirplaneType`,`price`) VALUES('" + (flightId+"") + "','" + (e.seatNb+"") + "','" + (e.idAirplaneType+"") + "','" + price + "' " + "ON DUPLICATE KEY UPDATE price=" + price;
+	      val query = "INSERT INTO seatinstance(`idFlight`,`seatNumber`,`idAirplaneType`,`price`) VALUES('" + (flightId+"") + "','" + (e.seatNb+"") + "','" + (e.idAirplaneType+"") + "','" + priceString + "') " + "ON DUPLICATE KEY UPDATE price=" + priceString;
+	      //println(query);
 	      execute(query);
 	    }
 	  }
+	  }
+	}
+	
+	def priceToDouble(price: Price) : Double = {
+	  var result = 0d;
+	  price match {
+	  	case Dollar(Filled(dollar), Filled(cent)) => result = dollar + cent/100;
+	  	case Dollar(Empty(), Filled(cent)) => result = cent/100;
+	  	case Dollar(Filled(dollar), Empty()) => result = dollar;
+	  	case Euro(Filled(euro), Empty()) => result = toDollar(euro);
+	  	case Euro(Empty(), Filled(cent)) => result = toDollar(cent/100);
+	  	case Euro(Filled(euro), Filled(cent)) => result = toDollar(euro + cent/100);
+	  	case _ =>
+	  }
+	  return result;
 	}
 	
 
