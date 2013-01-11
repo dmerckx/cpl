@@ -99,7 +99,7 @@ object Parser extends StandardTokenParsers {
   
   lexical.delimiters += ("{", "}", ",", ":", "[", "]")
   lexical.reserved += ("ADD", "CHANGE", "REMOVE", "TO", "FROM", "WITH", "INSTANCES", "AND",  
-		  				"CITY", "AIRPORT", "AIRPLANE", "TYPE", "DISTANCE", "SEAT", "SEATS", "PERIOD", "PERIODS", "TEMPLATE", "FLIGHT")
+		  				"CITY", "AIRPORT", "AIRPLANE", "TIME", "TYPE", "DISTANCE", "SEAT", "SEATS", "PERIOD", "PERIODS", "TEMPLATE", "FLIGHT")
   
   // ----- ALL THE ACTUAL OPERATORS ----- //
     
@@ -253,13 +253,13 @@ object Parser extends StandardTokenParsers {
   val flightTimeAtts =
     parseType("from", airport) |
     parseType("to", airport) |
-    parseType("airplaneType:", airplaneType) |
+    parseType("airplaneType", airplaneType) |
     parseType("time", time)
   val flightTime =
-    parseAtts(flightTimeAtts) ^^ {as => FlightTime(selOpt[Airport]("from",as), selOpt("to", as),
+    parseAtts(flightTimeAtts) ^^ {as => FlightTime(selOpt[Airport]("from",as), selOpt[Airport]("to", as),
     									selOpt[AirplaneType]("airplaneType", as), selOpt[Time]("time", as))}
   val flightTimeData =
-    parseAtts(flightTimeAtts) ^^ {as => FlightTime_data(sel[Airport]("from",as), sel("to", as),
+    parseAtts(flightTimeAtts) ^^ {as => FlightTime_data(sel[Airport]("from",as), sel[Airport]("to", as),
     									sel[AirplaneType]("airplaneType", as), sel[Time]("time", as))}
   //AirlineCompany
   val airlineAtts =
