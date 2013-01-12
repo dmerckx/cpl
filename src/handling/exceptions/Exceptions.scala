@@ -37,6 +37,7 @@ case class NoSuchFromAirportAirportException(from: Airport) extends Exception
 case class NonUniqueToAirportAirportException(from: Airport) extends Exception
 case class NoSuchToAirportAirportException(from: Airport) extends Exception
 //case class NotAllowedAirportCode(arg:String) extends Exception
+case class IllegalAirportShortException(arg:String) extends Exception
 
 //AIRPLANETYPE
 case class IllegalAirplaneTypeNameException(name:String) extends Exception

@@ -232,15 +232,18 @@ object Parser extends StandardTokenParsers {
   val airplaneType =
     parseAtts(airplaneTypeAtts) ^^ {as => AirplaneType(selOpt[String]("name",as))}
   val airplaneTypeData =
-    parseAtts(airplaneTypeAtts) ^^ {as => AirplaneType_data(sel[String]("name",as))}
+    parseAtts(airplaneTypeAtts) ^^ {
+	  as => 
+	  println("AIRPLANE TYPE: "  + as);
+	  AirplaneType_data(sel[String]("name",as))}
   //Seats
   val seatChange1Atts = parseInt("number") | parseInt("amt") | parseStr("seatTypeChange")
   val seatChange2Atts = parseStr("seatTypeSelect") | parseStr("seatTypeChange")
   val seatRemove1Atts = parseInt("number") | parseInt("amt")
   val seatRemove2Atts = parseInt("seatType")
-  val seatDataAtts = parseInt("number") | parseInt("amt") | parseStr("seatTypeChange")
+  val seatDataAtts = parseInt("number") | parseInt("amt") | parseStr("type")
   val seatData = 
-    parseAtts(seatDataAtts) ^^ {as => Seat_data(selOpt[Int]("number", as), selOpt[Int]("amt", as), sel[String]("seatType", as))}
+    parseAtts(seatDataAtts) ^^ {as => Seat_data(selOpt[Int]("number", as), selOpt[Int]("amt", as), sel[String]("type", as))}
   val seatChange = 
     parseAtts(seatChange1Atts) ^? {case as => Seat_change1(sel[Int]("number", as), selOpt[Int]("amt", as), sel[String]("seatType", as))} |
     parseAtts(seatChange2Atts) ^^ {as => Seat_change2(selOpt[String]("seatTypeSelect", as), sel[String]("seatType", as))}
