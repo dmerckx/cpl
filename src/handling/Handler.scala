@@ -1275,7 +1275,7 @@ object Handler {
 
 		for (seat <- prices) {
 				val priceVal = extractPrice(seat);
-				extractSeatNumbers(seat, airplaneType).foreach(seatNb => (Q.u + "insert into seatinstance(`seatnumber`,`idAirplanetype`,`price`) values ('" (seatNb+"") + "','" + (airplaneTypes.head+"") + "','" + (priceVal+"") +"')").execute)
+				extractSeatNumbers(seat, airplaneType).foreach(seatNb => (Q.u + "insert into seatinstance(`seatnumber`,`idAirplanetype`,`price`) values ('" + (seatNb+"") + "','" + (airplaneTypes.head+"") + "','" + (priceVal+"") +"')").execute)
 		}
 	}
 
