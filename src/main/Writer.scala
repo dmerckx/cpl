@@ -7,10 +7,18 @@ object Writer {
 	def successWriter(operation: Operation): String = {
 		var success = "";
 		operation match {
-			case _ => success = "You are successful. I don't know at what.";
+			case _ => success = "Sucessfully executed operation.\n" + indent(operation.toString);
 		}
 		return success;
 	}
+	
+	def indent(input:String) : String = {
+		//input.split('\n');
+		var output = "";
+		input.trim().split('\n').map(line => s"\t$line").foreach(line => output = output + line);
+		return output;
+	}
+
 
 	def errorWriter(exception: Exception): String = {
 		var error = "";

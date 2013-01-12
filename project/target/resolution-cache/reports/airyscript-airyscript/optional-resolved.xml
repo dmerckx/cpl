@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="ivy-report.xsl"?>
+<ivy-report version="1.0">
+	<info
+		organisation="airyscript"
+		module="airyscript"
+		revision="1.0"
+		extra-sbtVersion="0.12"
+		extra-scalaVersion="2.10"
+		conf="optional"
+		confs="compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom"
+		date="20130112071108"/>
+	<dependencies>
+	</dependencies>
+</ivy-report>

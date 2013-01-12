@@ -14,6 +14,8 @@ import syntax.Template_data
 import syntax.Airport
 import syntax.Flight_data
 
+case class NotImplementedException extends Exception;
+
 //CITY
 case class IllegalCityNameException(name:String) extends Exception
 case class AlreadyExistingCityNameException(name:String) extends Exception

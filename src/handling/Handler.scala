@@ -28,15 +28,15 @@ case class SeatNumberIdAirplaneType(seatNb: Int, idAirplaneType: Int);
 
 object Handler {
 	var databaseLocation = "localhost"
-	var databaseName     = "mydb"
+	var databaseName     = "airyscript"
 	var databaseUsername = "root"
-	var databasePassword = "password"
+	var databasePassword = ""
 	
 	/**
 	 * Main method of the handler. All output of the parser will be processed by this method to be mapped on an actual database operation.
 	 */
 	def handle(op: Operation) = {
-	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+	  Database.forURL(s"jdbc:mysql://$databaseLocation/$databaseName?user=$databaseUsername&password=$databasePassword",
 				driver = "com.mysql.jdbc.Driver") withSession {
 			op match {
 				//CITY
@@ -85,6 +85,8 @@ object Handler {
 			//SEAT INSTANCES
 			case ChangeFlightSeatInstancesTo(flight,seatInstances_data) => changeFlightSeatInstancesTo(flight,seatInstances_data);
 			case ChangeTemplateSeatInstancesTo(template,seatInstances_data) => changeTemplateSeatInstancesTo(template,seatInstances_data);
+			
+			case _ => throw new NotImplementedException;
 			}
 		}
 	}

@@ -1,0 +1,56 @@
+[0m[[0mdebug[0m] [0m[0m
+[0m[[0mdebug[0m] [0mInitial source changes: [0m
+[0m[[0mdebug[0m] [0m	removed:Set()[0m
+[0m[[0mdebug[0m] [0m	added: Set(src\handling\tests\SeatTypeTest.scala, src\handling\tests\MainTest.scala, src\handling\tests\AirplaneTypeTest.scala, src\handling\tests\TemplateTest.scala, src\handling\exceptions\Exceptions.scala, src\main\Interpreter.scala, src\syntax\Test.scala, src\main\Writer.scala, src\syntax\TestJonathan.scala, src\handling\tests\ChangeTemplateTest.scala, src\handling\Handler.scala, src\handling\tests\FlightTest.scala, src\parser\Tests.scala, src\parser\Parser.scala, src\handling\tests\AssignmentTest.scala, src\handling\tests\ChangeFlightSeatInstancesTest.scala, src\handling\tests\FlightTimeTest.scala, src\syntax\Syntax.scala, src\handling\Tests.scala, src\handling\tests\AirportTest.scala, src\handling\tests\CityTest.scala, src\main\Main.scala)[0m
+[0m[[0mdebug[0m] [0m	modified: Set()[0m
+[0m[[0mdebug[0m] [0mRemoved products: Set()[0m
+[0m[[0mdebug[0m] [0mModified external sources: Set()[0m
+[0m[[0mdebug[0m] [0mModified binary dependencies: Set()[0m
+[0m[[0mdebug[0m] [0mInitial directly invalidated sources: Set(src\handling\tests\SeatTypeTest.scala, src\handling\tests\MainTest.scala, src\handling\tests\AirplaneTypeTest.scala, src\handling\tests\TemplateTest.scala, src\handling\exceptions\Exceptions.scala, src\main\Interpreter.scala, src\syntax\Test.scala, src\main\Writer.scala, src\syntax\TestJonathan.scala, src\handling\tests\ChangeTemplateTest.scala, src\handling\Handler.scala, src\handling\tests\FlightTest.scala, src\parser\Tests.scala, src\parser\Parser.scala, src\handling\tests\AssignmentTest.scala, src\handling\tests\ChangeFlightSeatInstancesTest.scala, src\handling\tests\FlightTimeTest.scala, src\syntax\Syntax.scala, src\handling\Tests.scala, src\handling\tests\AirportTest.scala, src\handling\tests\CityTest.scala, src\main\Main.scala)[0m
+[0m[[0mdebug[0m] [0m[0m
+[0m[[0mdebug[0m] [0mSources indirectly invalidated by:[0m
+[0m[[0mdebug[0m] [0m	product: Set()[0m
+[0m[[0mdebug[0m] [0m	binary dep: Set()[0m
+[0m[[0mdebug[0m] [0m	external source: Set()[0m
+[0m[[0mdebug[0m] [0mInitially invalidated: Set(src\handling\tests\SeatTypeTest.scala, src\handling\tests\MainTest.scala, src\handling\tests\AirplaneTypeTest.scala, src\handling\tests\TemplateTest.scala, src\handling\exceptions\Exceptions.scala, src\main\Interpreter.scala, src\syntax\Test.scala, src\main\Writer.scala, src\syntax\TestJonathan.scala, src\handling\tests\ChangeTemplateTest.scala, src\handling\Handler.scala, src\handling\tests\FlightTest.scala, src\parser\Tests.scala, src\parser\Parser.scala, src\handling\tests\AssignmentTest.scala, src\handling\tests\ChangeFlightSeatInstancesTest.scala, src\handling\tests\FlightTimeTest.scala, src\syntax\Syntax.scala, src\handling\Tests.scala, src\handling\tests\AirportTest.scala, src\handling\tests\CityTest.scala, src\main\Main.scala)[0m
+[0m[[0minfo[0m] [0mCompiling 22 Scala sources to C:\Users\Jonathan\workspace\cpl\cpl\target\scala-2.10\classes...[0m
+[0m[[0mdebug[0m] [0mRunning cached compiler 269f4f28, interfacing (CompilerInterface) with Scala compiler version 2.10.0[0m
+[0m[[0mdebug[0m] [0mCalling Scala compiler with arguments  (CompilerInterface):[0m
+[0m[[0mdebug[0m] [0m	-d[0m
+[0m[[0mdebug[0m] [0m	C:\Users\Jonathan\workspace\cpl\cpl\target\scala-2.10\classes[0m
+[0m[[0mdebug[0m] [0m	-bootclasspath[0m
+[0m[[0mdebug[0m] [0m	C:\Program Files\Java\jdk1.7.0_09\jre\lib\resources.jar;C:\Program Files\Java\jdk1.7.0_09\jre\lib\rt.jar;C:\Program Files\Java\jdk1.7.0_09\jre\lib\sunrsasign.jar;C:\Program Files\Java\jdk1.7.0_09\jre\lib\jsse.jar;C:\Program Files\Java\jdk1.7.0_09\jre\lib\jce.jar;C:\Program Files\Java\jdk1.7.0_09\jre\lib\charsets.jar;C:\Program Files\Java\jdk1.7.0_09\jre\lib\jfr.jar;C:\Program Files\Java\jdk1.7.0_09\jre\classes;C:\Users\Jonathan\.sbt\boot\scala-2.10.0\lib\scala-library.jar[0m
+[0m[[0mdebug[0m] [0m	-classpath[0m
+[0m[[0mdebug[0m] [0m	C:\Users\Jonathan\workspace\cpl\cpl\target\scala-2.10\classes;C:\Users\Jonathan\workspace\cpl\cpl\jars\mysql-connector-java-5.1.22-bin.jar;C:\Users\Jonathan\workspace\cpl\cpl\jars\scalatest-1.6.1.jar;C:\Users\Jonathan\workspace\cpl\cpl\jars\slf4j-api-1.7.2.jar;C:\Users\Jonathan\workspace\cpl\cpl\jars\slf4j-simple-1.7.2.jar;C:\Users\Jonathan\workspace\cpl\cpl\jars\slick_2.10-1.0.0-RC1-sources.jar;C:\Users\Jonathan\workspace\cpl\cpl\jars\slick_2.10-1.0.0-RC1.jar;C:\Users\Jonathan\.ivy2\cache\commons-lang\commons-lang\jars\commons-lang-2.6.jar[0m
+[0m[[33mwarn[0m] [0mC:\Users\Jonathan\workspace\cpl\cpl\src\handling\tests\AirportTest.scala:38: This catches all Throwables. If this is really intended, use `case _ : Throwable` to clear this warning.[0m
+[0m[[33mwarn[0m] [0m		case _ => throw new FailedTestError("non unique city name was added to the database");[0m
+[0m[[33mwarn[0m] [0m		     ^[0m
+[0m[[33mwarn[0m] [0mC:\Users\Jonathan\workspace\cpl\cpl\src\handling\tests\CityTest.scala:70: This catches all Throwables. If this is really intended, use `case _ : Throwable` to clear this warning.[0m
+[0m[[33mwarn[0m] [0m		case _ => throw new FailedTestError("non unique city name was added to the database");[0m
+[0m[[33mwarn[0m] [0m		     ^[0m
+[0m[[33mwarn[0m] [0mC:\Users\Jonathan\workspace\cpl\cpl\src\handling\tests\SeatTypeTest.scala:33: This catches all Throwables. If this is really intended, use `case _ : Throwable` to clear this warning.[0m
+[0m[[33mwarn[0m] [0m		case _ => throw new FailedTestError("non unique seat type was added to the database");[0m
+[0m[[33mwarn[0m] [0m		     ^[0m
+[0m[[33mwarn[0m] [0mC:\Users\Jonathan\workspace\cpl\cpl\src\parser\Parser.scala:47: abstract type pattern T is unchecked since it is eliminated by erasure[0m
+[0m[[33mwarn[0m] [0m      map.get(key).get match {case t:T => t}[0m
+[0m[[33mwarn[0m] [0m                                     ^[0m
+[0m[[33mwarn[0m] [0mC:\Users\Jonathan\workspace\cpl\cpl\src\parser\Parser.scala:58: abstract type pattern T is unchecked since it is eliminated by erasure[0m
+[0m[[33mwarn[0m] [0m      map.get(key).get match {case s:T => Filled(s)}[0m
+[0m[[33mwarn[0m] [0m                                     ^[0m
+[0m[[33mwarn[0m] [0mC:\Users\Jonathan\workspace\cpl\cpl\src\handling\Handler.scala:37: match may not be exhaustive.[0m
+[0m[[33mwarn[0m] [0mIt would fail on the following inputs: ChangeDistTo(_, _), ChangeFlightTime(_, _), ChangeSeatsTo(_, _), ChangeTemplatePeriods(_, _, _), ChangeTemplatePeriodsTo(_, _), RemoveDist(_), RemoveFlightTime(_), RemoveSeats(_, _), RemoveTemplate(_), RemoveTemplatePeriods(_, _)[0m
+[0m[[33mwarn[0m] [0m			op match {[0m
+[0m[[33mwarn[0m] [0m			^[0m
+[0m[[33mwarn[0m] [0mC:\Users\Jonathan\workspace\cpl\cpl\src\parser\Parser.scala:353: match may not be exhaustive.[0m
+[0m[[33mwarn[0m] [0mIt would fail on the following inputs: Error(_, _), Failure(_, _)[0m
+[0m[[33mwarn[0m] [0m    phrase(parseFunc)(tokens) match {[0m
+[0m[[33mwarn[0m] [0m                     ^[0m
+[0m[[33mwarn[0m] [0mthere were 2 deprecation warnings; re-run with -deprecation for details[0m
+[0m[[33mwarn[0m] [0m8 warnings found[0m
+[0m[[0mdebug[0m] [0mScala compilation took 21.694108499 s[0m
+[0m[[0mdebug[0m] [0mStep 2 changed sources and immdediate dependencies:[0m
+[0m[[0mdebug[0m] [0m	Set(src\handling\tests\SeatTypeTest.scala, src\handling\tests\MainTest.scala, src\handling\tests\AirplaneTypeTest.scala, src\handling\tests\TemplateTest.scala, src\handling\exceptions\Exceptions.scala, src\main\Interpreter.scala, src\syntax\Test.scala, src\main\Writer.scala, src\syntax\TestJonathan.scala, src\handling\tests\ChangeTemplateTest.scala, src\handling\Handler.scala, src\handling\tests\FlightTest.scala, src\parser\Tests.scala, src\parser\Parser.scala, src\handling\tests\AssignmentTest.scala, src\handling\tests\ChangeFlightSeatInstancesTest.scala, src\handling\tests\FlightTimeTest.scala, src\syntax\Syntax.scala, src\handling\Tests.scala, src\handling\tests\AirportTest.scala, src\handling\tests\CityTest.scala, src\main\Main.scala)[0m
+[0m[[0mdebug[0m] [0mNon-trivial strongly connected components: [0m
+[0m[[0mdebug[0m] [0m	[0m
+[0m[[0mdebug[0m] [0mStep 2 invalidated sources:[0m
+[0m[[0mdebug[0m] [0m	Set(src\handling\tests\SeatTypeTest.scala, src\handling\tests\MainTest.scala, src\handling\tests\AirplaneTypeTest.scala, src\handling\tests\TemplateTest.scala, src\handling\exceptions\Exceptions.scala, src\main\Interpreter.scala, src\syntax\Test.scala, src\main\Writer.scala, src\syntax\TestJonathan.scala, src\handling\tests\ChangeTemplateTest.scala, src\handling\Handler.scala, src\handling\tests\FlightTest.scala, src\parser\Tests.scala, src\parser\Parser.scala, src\handling\tests\AssignmentTest.scala, src\handling\tests\ChangeFlightSeatInstancesTest.scala, src\handling\tests\FlightTimeTest.scala, src\syntax\Syntax.scala, src\handling\Tests.scala, src\handling\tests\AirportTest.scala, src\handling\tests\CityTest.scala, src\main\Main.scala)[0m
