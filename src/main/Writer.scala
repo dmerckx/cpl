@@ -15,9 +15,13 @@ object Writer {
 		var error = "";
 		exception match {
 			case IllegalCityNameException(name) =>
-			case AlreadyExistingCityNameException(name) => 
+				error = s"Illegal city name: $name"
+			case AlreadyExistingCityNameException(name) =>
+				error = s"There already exists a city with name $name"
 			case NoSuchCityNameException(name) => 
+				error = s"There exists no city with name $name"
 			case NoSuchCityException(name) => 
+				error =s"There exists no city with name $name"
 			case NonUniqueCityNameException(name) => 
 			case ExistingReferenceException(name) => 
 			
