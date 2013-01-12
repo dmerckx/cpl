@@ -419,21 +419,21 @@ object Handler {
 				driver = "com.mysql.jdbc.Driver") withSession {
 			val airportFromList = getAirportFromIds(template);
 			if(airportFromList.size > 1) 
-				throw new NonUniqueFromAirport();
+				throw new NonUniqueFromAirportException(template);
 			if(airportFromList.size == 0)
-				throw new NoSuchFromAirport();
+				throw new NoSuchFromAirportException(template);
 
 			val airportToList = getAirportToIds(template);
 			if(airportToList.size > 1)
-				throw new NonUniqueToAirport();
+				throw new NonUniqueToAirportException(template);
 			if(airportToList.size == 0) 
-				throw new NoSuchToAirport();
+				throw new NoSuchToAirportException(template);
 
 			val airplaneTypeList = getAirplaneTypeIds(template);
 			if(airplaneTypeList.size > 1)
-				throw new NonUniqueAirplaneType();
+				throw new NonUniqueAirplaneTypeTemplateException(template);
 			if(airplaneTypeList.size == 0)
-				throw new NoSuchAirplaneType();
+				throw new NoSuchAirplaneTypeTemplateException(template);
 
 			val fln = template.fln;
 			if (!isValidFLN(fln)) 
@@ -526,12 +526,12 @@ object Handler {
 		  change match {
 		    case Template_change(Filled(fln),_,_,_) => 
 		      if (nrTemplateIds > 1)
-		        throw new NonUniqueTemplateException();
+		        throw new NonUniqueTemplateException(template);
 		      val templateIdsChange = getTemplateIdFromFLN(fln);
 		      if (templateIdsChange.size > 1)
-		        throw new NonUniqueTemplateException();
+		        throw new NonUniqueNewTemplateException(change);
 		      if (templateIdsChange.size < 1)
-		        throw new NoSuchTemplateException();
+		        throw new NoSuchNewTemplateException(change);
 		      columns = "idTemplate" :: columns
 		      values = templateIds.head.idTemplate.toString :: values
 		      columns = "idAirline" :: columns
@@ -542,9 +542,9 @@ object Handler {
 		    case Template_change(_,Filled(from),_,_) => 
 		      val fromIds = getAirportIds(from);
 		      if (fromIds.size > 1)
-		        throw new NonUniqueFromAirport();
+		        throw new NonUniqueFromAirportAirportException(from);
 		      if (fromIds.size < 1)
-		        throw new NoSuchFromAirport();
+		        throw new NoSuchFromAirportAirportException(from);
 		      columns = "idAirportFrom" :: columns;
 		      values = fromIds.head.toString :: values;
 		    case _ => // do nothing
@@ -553,9 +553,9 @@ object Handler {
 		    case Template_change(_,_,Filled(to),_) => ;
 		      val toIds = getAirportIds(to);
 		      if (toIds.size > 1)
-		        throw new NonUniqueToAirport();
+		        throw new NonUniqueToAirportAirportException(to);
 		      if (toIds.size < 1)
-		        throw new NoSuchFromAirport();
+		        throw new NoSuchFromAirportAirportException(to);
 		      columns = "idAirportTo" :: columns;
 		      values = toIds.head.toString :: values;
 		    case _ => // do nothing
@@ -564,9 +564,9 @@ object Handler {
 		    case Template_change(_,_,_,Filled(airplaneType)) => 
 		      val atIds = getAirplaneTypeIds(airplaneType);
 		      if (atIds.size > 1)
-		        throw new NonUniqueAirplaneTypeException();
+		        throw new NonUniqueAirplaneTypeException(airplaneType);
 		      if (atIds.size < 1)
-		        throw new NoSuchAirplaneTypeException();
+		        throw new NoSuchAirplaneTypeException(airplaneType);
 		      columns = "idAirplaneType" :: columns;
 		      values = atIds.head.toString :: values;
 		      airplaneTypeChange = true;
@@ -612,7 +612,7 @@ object Handler {
 				val databaseSeatNbs = extractSeatNumbers(seat, airplaneType);
 
         if(!isExpectedAmount(seat,databaseSeatNbs.size)) {
-          throw new IllegalAmountOfSpecifiedSeatsException();
+          throw new IllegalAmountOfSpecifiedSeatsException(seat,databaseSeatNbs.size);
         }
 			}
     if(totalSeats >=1) {
@@ -807,7 +807,7 @@ object Handler {
 				defaultSeatNumber = defaultSeatNumber + 1;
 			}
     if(count("select count(*) from seat where idAirplaneType='" + getAirplaneTypeIds(airplaneType).head + "' and seatNumber='" + (defaultSeatNumber-1) + "'") != 1)
-      throw new IllegalAmountOfSpecifiedSeatsException();
+      throw new IllegalAmountOfSpecifiedSeatsException2(seat,1);
 			return result;
 	}
 
@@ -829,7 +829,7 @@ object Handler {
 				throw new AlreadyExistingAirplaneTypeException(airplaneType.name);
 
       if(!areUniqueSeatTypes(toSeatInstance_data(arrangement))) {
-        throw new NonUniqueSeatTypeException();
+        throw new NonUniqueSeatTypeException(toSeatInstance_data(arrangement));
       }
 
 			execute[AirplaneType_data](insert, airplaneType);
@@ -970,10 +970,10 @@ object Handler {
 	
 	def changeFlightSeatInstancesTo(flight: Flight, seatInstances: List[SeatInstance_data]) {
 	  if (hasOverlappingSeatNumbers(seatInstances)) {
-	    throw new OverlappingSeatInstancesException();
+	    throw new OverlappingSeatInstancesException(seatInstances);
 	  }
 	  if (hasSameSeatTypes(seatInstances)) {
-	    throw new SameSeatTypesException();
+	    throw new SameSeatTypesException(seatInstances);
 	  }
 	  for (s <- seatInstances) {
 	    s match {
@@ -1059,7 +1059,7 @@ object Handler {
 	      }
 	    }
 	    if (count != ((lastSeatNumber - firstSeatNumber) + 1)) {
-	      throw new SeatNumberOutOfRangeException();
+	      throw new FlightSeatNumberOutOfRangeException(flight,seatInstances);
 	    }
 	    for (e <- seatNumberIdAirplaneTypes) {
 	      if (e.seatNb >= firstSeatNumber && e.seatNb <= lastSeatNumber) {
@@ -1112,10 +1112,10 @@ object Handler {
 	
 	def changeTemplateSeatInstancesTo(template: Template,seatInstances: List[SeatInstance_data]) {
 	  if (hasOverlappingSeatNumbers(seatInstances)) {
-	    throw new OverlappingSeatInstancesException();
+	    throw new OverlappingSeatInstancesException(seatInstances);
 	  }
 	  if (hasSameSeatTypes(seatInstances)) {
-	    throw new SameSeatTypesException();
+	    throw new SameSeatTypesException(seatInstances);
 	  }
 	  for (s <- seatInstances) {
 	    s match {
@@ -1143,7 +1143,7 @@ object Handler {
 	      }
 	    }
 	    if (count != ((lastSeatNumber - firstSeatNumber) + 1)) {
-	      throw new SeatNumberOutOfRangeException();
+	      throw new TemplateSeatNumberOutOfRangeException(template,seatInstances);
 	    }
 	    for (e <- seatNumberIdAirplaneTypes) {
 	      if (e.seatNb >= firstSeatNumber && e.seatNb <= lastSeatNumber) {
@@ -1187,9 +1187,9 @@ object Handler {
 
 	def insert(flight:Flight_data) = {
 		if(getTemplateIds(flight.template).size > 1)
-			throw new NonUniqueTemplateException();
+			throw new NonUniqueTemplateException(flight.template);
 		if(getTemplateIds(flight.template).size == 0)
-			throw new NoSuchTemplateException();
+			throw new NoSuchTemplateException(flight.template);
 		var arrivalTime = extractArrivalTime(flight);
 		var airplaneTypes = extractAirplaneTypes(flight, flight.template);
 		var insert = "`cancelled`, `departure`";
@@ -1284,9 +1284,9 @@ object Handler {
 		var toTypes = getAirplaneTypeIds(idAirplaneTypeNew)
 		
 		if(toTypes.size >1 && idAirplaneTypeNew != null)
-			throw new NonUniqueNewAirplaneTypeException();
+			throw new NonUniqueNewAirplaneTypeException(changeFlight);
 		if(toTypes.size == 0 && idAirplaneTypeNew != null)
-			throw new NoSuchNewAirplaneTypeException();
+			throw new NoSuchNewAirplaneTypeException(changeFlight);
 
 		// make flights of the given timeperiod and template(if present)
 		// select necessary flights from actual flight view
@@ -1374,7 +1374,7 @@ object Handler {
 	def checkPrecedingConstraints(flightIds:List[Int], arrival:DateTime, departure:DateTime) {
 	  if(arrival != null && departure != null) {
 	    if (departure.compare(arrival) != -1) {
-	      throw new IllegalArrivalTimeException();
+	      throw new IllegalArrivalTimeException(arrival,departure);
 	    }
 	  }
 	  else {
@@ -1390,7 +1390,7 @@ object Handler {
 	  if( time != null ) {
 			for(id <- flightIds) {
 				if(count("select count(*) from actualflight where " + comp + "'" + getDateTime(time) + "' and idFlight='" + (id+"") + "'") > 0)
-					throw new IllegalArrivalTimeException();
+					throw new IllegalArrivalTimeDirectionException(id,time,setDirection);
 			}
 		}
 	}
