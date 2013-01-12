@@ -1269,7 +1269,7 @@ object Handler {
     var airplaneType = AirplaneType(Filled(getCodes("select name from airplanetype where idAirplaneType='" + airplaneTypes.head +"'").head));
 
 		if(!areCorrespondingSeats(prices,airplaneType))
-			throw new NoCorrespondingSeatsException(prices,airplaneTypes.head);
+			throw new NoCorrespondingSeatsException(prices,airplaneType);
 
 		addFlight(flight);
 
