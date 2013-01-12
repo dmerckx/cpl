@@ -1191,7 +1191,7 @@ object Handler {
 		if(getTemplateIds(flight.template).size == 0)
 			throw new NoSuchTemplateException();
 		var arrivalTime = extractArrivalTime(flight);
-		var airplaneTypes = extractAirplaneTypes(flight);
+		var airplaneTypes = extractAirplaneTypes(flight, flight.template);
 		var insert = "`cancelled`, `departure`";
 		var values = (0+"") + ",'" + getDateTime(flight.departure) + "'";
 		if(!arrivalTime.equals("")) {
@@ -1230,8 +1230,8 @@ object Handler {
 			flight match {
 			case Flight_data(_,_,_,Filled(airplaneTypeVal)) => airplaneTypes = getAirplaneTypeIds(airplaneTypeVal);
 			case _ =>
-        var templateId = getTemplateIds(template).head;
-        airplaneTypes = getIds("select idAirplaneType from template where idAirline='" + templateId.idAirline + "' and idTemplate='" + template.idTemplate + "'") ;
+        val templateId: TemplateId = getTemplateIds(template).head;
+        airplaneTypes = getIds("select idAirplaneType from template where idAirline='" + templateId.idAirline + "' and idTemplate='" + templateId.idTemplate + "'") ;
 			}
 			return airplaneTypes;
 	}
@@ -1259,21 +1259,23 @@ object Handler {
     if(getTemplateIds(flight.template).size == 0)
       throw new NoSuchTemplateException();
 
-		val airplaneTypes = extractAirplaneTypes(flight);
+		val airplaneTypes = extractAirplaneTypes(flight, flight.template);
 
     if(airplaneTypes.size > 1)
       throw new NonUniqueAirplaneTypeException();
     if(airplaneTypes.size == 0)
       throw new NoSuchAirplaneTypeException();
 
-		if(!areCorrespondingSeats(prices, airplaneTypes.head))
+    var airplaneType = AirplaneType(Filled(getCodes("select name from airplanetype where idAirplaneType='" + airplaneTypes.head +"'").head));
+
+		if(!areCorrespondingSeats(prices,airplaneType))
 			throw new NoCorrespondingSeatsException();
 
 		addFlight(flight);
 
 		for (seat <- prices) {
 				val priceVal = extractPrice(seat);
-				extractSeatNumbers(seat, template.airplaneType).foreach(seatNb => (Q.u + "insert into seatinstance(`seatnumber`,`idAirplanetype`,`price`) values ('" (seatNb+"") + "','" + (airplaneTypes.head+"") + "','" + (priceVal+"") +"')").execute)
+				extractSeatNumbers(seat, airplaneType).foreach(seatNb => (Q.u + "insert into seatinstance(`seatnumber`,`idAirplanetype`,`price`) values ('" (seatNb+"") + "','" + (airplaneTypes.head+"") + "','" + (priceVal+"") +"')").execute)
 		}
 	}
 

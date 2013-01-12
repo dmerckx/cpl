@@ -56,8 +56,8 @@ object TemplateTest {
     val period2 = Period_data(Empty(),Filled(date3),Empty(),startTime1);
     val periods = List(period1,period2);
     val template = Template_data("RYA1234",airport1,airport2,airplaneType1);
-    val template_change= Template_change("RYA1234",)
-    Handler.handle(ChangeTemplate(template1));
+    val template_change= Template_change(Filled("RYA1234"),Filled(airport1),Filled(airport2),Filled(airplaneType1));
+    Handler.handle(ChangeTemplate(template1,template2));
   }
 
 }
