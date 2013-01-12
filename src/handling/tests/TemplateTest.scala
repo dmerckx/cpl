@@ -7,7 +7,8 @@ import handling.exceptions._
 object TemplateTest {
 
   def main(args: Array[String]) {
-	  succes();
+	  //succes();
+    changeFlight();
   }
   
   def succes() {
@@ -37,11 +38,11 @@ object TemplateTest {
 
   def changeFlight() {
     val airline1 = Airline(Filled("RYA"),Empty());
-    val city1 = City(Filled("Brussels"));
+    val city1 = City(Filled("Valencia"));
     val airport1 = Airport(Filled(city1),Empty(),Empty());
     val airport2 = Airport(Empty(),Empty(),Filled("NY"));
-    val airplaneType1 = AirplaneType(Filled("BOEING727"));
-    val airplaneType2 = AirplaneType(Filled("BOEING747"));
+    val airplaneType1 = AirplaneType(Filled("BOEING777"));
+    val airplaneType2 = AirplaneType(Filled("BOEING727"));
     val price1 = Dollar(Filled(100), Filled(5));
     val price2 = Euro(Filled(50),Filled(50));
     val seatInstance1 = SeatNumberInstances_data(5,Filled(5),price1);
@@ -55,8 +56,8 @@ object TemplateTest {
     val period1 = Period_data(Filled(date1),Filled(date3),Filled("5"),startTime2);
     val period2 = Period_data(Empty(),Filled(date3),Empty(),startTime1);
     val periods = List(period1,period2);
-    val template1 = Template(Empty(),Filled("RYA1234"),Filled(airport1),Filled(airport2),Filled(airplaneType1));
-    val template_change= Template_change(Filled("RYA1234"),Filled(airport1),Filled(airport2),Filled(airplaneType1));
+    val template1 = Template(Empty(),Filled("RYA4521"),Filled(airport1),Filled(airport2),Filled(airplaneType2));
+    val template_change= Template_change(Filled("RYA4521"),Filled(airport1),Filled(airport2),Filled(airplaneType1));
     Handler.handle(ChangeTemplate(template1,template_change));
   }
 
