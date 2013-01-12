@@ -103,8 +103,8 @@ object Handler {
 		//Check if the properties of this city etc are correct (only a-zA-Z), if not throw error.
 		if (data.name != null) {
 
-			if (!data.name.matches("[a-zA-Z]+"))
-				throw new IllegalCityNameException(data.name);
+		//	if (!data.name.matches("[a-zA-Z]+"))
+		//		throw new IllegalCityNameException(data.name);
 
 			if (hasUniqueResult(select("count(*)", "city", "name='" + data.name + "'")))
 				throw new AlreadyExistingCityNameException(data.name);
@@ -132,8 +132,8 @@ object Handler {
 	def changeCity(name: String, toName: String) {
 		if (name != null) {
 
-			if (!name.matches("[a-zA-Z]+"))
-				throw new IllegalCityNameException(name);
+		//	if (!name.matches("[a-zA-Z]+"))
+		//		throw new IllegalCityNameException(name);
 			if(!hasUniqueResult(select("count(*)", "city", "name='" + name + "'")))
 				throw new NonUniqueCityNameException(name);
 
@@ -192,8 +192,8 @@ object Handler {
 		var cityName = getCityName(airport);
 		if (airport.name != null && cityName != "") {
 
-			if (!airport.name.matches("[a-zA-Z0-9\\s]+"))
-				throw new IllegalAirportNameException(airport.name);
+	//		if (!airport.name.matches("[a-zA-Z0-9\\s]+"))
+	//			throw new IllegalAirportNameException(airport.name);
 
       if(!airport.short.matches("[A-Z]{3}"))
         throw new IllegalAirportShortException(airport.short);
@@ -210,11 +210,11 @@ object Handler {
 	}
 
 	def removeAirport(airport: Airport) {
-		//TODO
+
 	}
 
 	def changeAirport(airportFrom: Airport,airportTo: Airport) {
-		//TODO
+
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -263,7 +263,6 @@ object Handler {
 	}
 
 	def insert(flightTime: FlightTime_data) : Unit = {
-			//TODO unique flight checking!
 			val duration = flightTime.time;
 			duration match {
 			case Time(Empty(),Empty(),Empty()) => throw new NoDurationException(duration);
@@ -820,8 +819,8 @@ object Handler {
 
 	def addAirplaneType(airplaneType:AirplaneType_data, arrangement: List[Seat_data]) {
 		if(airplaneType.name != null) {
-			if (!airplaneType.name.matches("[a-zA-Z0-9\\s]+"))
-				throw new IllegalAirplaneTypeNameException(airplaneType.name);
+	//		if (!airplaneType.name.matches("[a-zA-Z0-9\\s]+"))
+	//			throw new IllegalAirplaneTypeNameException(airplaneType.name);
 
 			if (hasUniqueResult(select("count(*)", "airplanetype", "(name='" + airplaneType.name + "')")))
 				throw new AlreadyExistingAirplaneTypeException(airplaneType.name);
@@ -846,11 +845,11 @@ object Handler {
   }
 
 	def changeAirplaneType(airplaneFrom:AirplaneType, airplaneTo:AirplaneType) {
-		//TODO
+
 	}
 
 	def removeAirplaneType(airplane:AirplaneType) {
-		//TODO
+
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -908,8 +907,8 @@ object Handler {
 
 	def addAirline(airline:Airline_data) {
 		if(airline.name != null) {
-			if (!airline.name.matches("[a-zA-Z09\\s]+"))
-				throw new IllegalAirlineNameException(airline.name);
+			//if (!airline.name.matches("[a-zA-Z09\\s]+"))
+			//	throw new IllegalAirlineNameException(airline.name);
 			if(airline.short.length < 2 || airline.short.length > 3 )
 				throw new IllegalAirlineCodeException(airline.short);
 			if (hasUniqueResult(select("count(*)", "airline", "(name='" + airline.name + "')")))
@@ -922,11 +921,11 @@ object Handler {
 	}
 
 	def changeAirline(airlineFrom:Airline, airlineTo:Airline) {
-		//TODO
+
 	}
 
 	def removeAirline(airline:Airline) {
-		//TODO
+
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -937,8 +936,8 @@ object Handler {
 
 	def addSeatType(name:String) {
 		if(name != null) {
-			if (!name.matches("[a-zA-Z]+"))
-				throw new IllegalSeatTypeException(name);
+		//	if (!name.matches("[a-zA-Z]+"))
+		//		throw new IllegalSeatTypeException(name);
 			if(hasUniqueResult(select("Count(*)","SeatType","name='" + name + "'")))
 				throw new AlreadyExistingSeatTypeException(name:String);
 
@@ -949,11 +948,11 @@ object Handler {
 
 
 	def removeSeatType(name:String) {
-		//TODO
+
 	}
 
 	def changeSeatType(seatTypeFrom: String, seatTypeTo:String) {
-		//TODO
+
 	}
 	
 	////////////////////////////////////////////////////////////////////////////////
@@ -1418,7 +1417,6 @@ object Handler {
 	}
 
 	def getMostRestrictiveTimePeriod(departure:DateTime,arrival:DateTime,timePeriod:TimePeriod) : TimePeriod = {
-			//TODO could check if the departure and or arrival is contained in the given timeperiod
 			if(timePeriod != null)
 				return timePeriod;
 			if(departure != null)
