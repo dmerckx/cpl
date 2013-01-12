@@ -27,7 +27,11 @@ case class Price(price: Double);
 case class SeatNumberIdAirplaneType(seatNb: Int, idAirplaneType: Int);
 
 object Handler {
-
+	var databaseLocation = "localhost"
+	var databaseName     = "mydb"
+	var databaseUsername = "root"
+	var databasePassword = "password"
+	
 	/**
 	 * Main method of the handler. All output of the parser will be processed by this method to be mapped on an actual database operation.
 	 */
@@ -135,10 +139,7 @@ object Handler {
 				throw new AlreadyExistingCityNameException(toName);
 
 			//TODO meer generisch maken
-			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-					driver = "com.mysql.jdbc.Driver") withSession {
-				update_City(name, toName);
-			}
+			update_City(name, toName);
 		}
 	}
 
@@ -159,14 +160,11 @@ object Handler {
 
 	def areReferencesTo(name:String) : Boolean = {
 			var result = false;
-			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-					driver = "com.mysql.jdbc.Driver") withSession {
-				var airportIds = getCodes("select idAirport from (Airport JOIN City ON airport.city=city.idCity) where city.name='" + name + "'");
-				for(Id <- airportIds) {
-					val airport = Airport(Empty(),Empty(),Filled(Id));
-					if(getTemplateIds(Template(Empty(),Empty(),Filled(airport),Empty(),Empty())).size > 0 || getTemplateIds(Template(Empty(),Empty(),Empty(),Filled(airport),Empty())).size > 0) {
-						result= true;
-					}
+			var airportIds = getCodes("select idAirport from (Airport JOIN City ON airport.city=city.idCity) where city.name='" + name + "'");
+			for(Id <- airportIds) {
+				val airport = Airport(Empty(),Empty(),Filled(Id));
+				if(getTemplateIds(Template(Empty(),Empty(),Filled(airport),Empty(),Empty())).size > 0 || getTemplateIds(Template(Empty(),Empty(),Empty(),Filled(airport),Empty())).size > 0) {
+					result= true;
 				}
 			}
 			return result;
@@ -415,64 +413,61 @@ object Handler {
 	}
 
 	def addTemplate(template: Template_data, prices:List[SeatInstance_data], periods: List[Period_data]) {
-		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-				driver = "com.mysql.jdbc.Driver") withSession {
-			val airportFromList = getAirportFromIds(template);
-			if(airportFromList.size > 1) 
-				throw new NonUniqueFromAirportException(template);
-			if(airportFromList.size == 0)
-				throw new NoSuchFromAirportException(template);
+		val airportFromList = getAirportFromIds(template);
+		if(airportFromList.size > 1) 
+			throw new NonUniqueFromAirportException(template);
+		if(airportFromList.size == 0)
+			throw new NoSuchFromAirportException(template);
 
-			val airportToList = getAirportToIds(template);
-			if(airportToList.size > 1)
-				throw new NonUniqueToAirportException(template);
-			if(airportToList.size == 0) 
-				throw new NoSuchToAirportException(template);
+		val airportToList = getAirportToIds(template);
+		if(airportToList.size > 1)
+			throw new NonUniqueToAirportException(template);
+		if(airportToList.size == 0) 
+			throw new NoSuchToAirportException(template);
 
-			val airplaneTypeList = getAirplaneTypeIds(template);
-			if(airplaneTypeList.size > 1)
-				throw new NonUniqueAirplaneTypeTemplateException(template);
-			if(airplaneTypeList.size == 0)
-				throw new NoSuchAirplaneTypeTemplateException(template);
+		val airplaneTypeList = getAirplaneTypeIds(template);
+		if(airplaneTypeList.size > 1)
+			throw new NonUniqueAirplaneTypeTemplateException(template);
+		if(airplaneTypeList.size == 0)
+			throw new NoSuchAirplaneTypeTemplateException(template);
 
-			val fln = template.fln;
-			if (!isValidFLN(fln)) 
-				throw new IllegalFLNException(fln)
+		val fln = template.fln;
+		if (!isValidFLN(fln)) 
+			throw new IllegalFLNException(fln)
 
-			val airlineId = getAirlineIdFromFLN(fln);
-			val templateId = getTemplateIdFromFLN(fln);
-			if (!isExistingAirline(airlineId))
-				throw new NoSuchAirlineException(airlineId)		
+		val airlineId = getAirlineIdFromFLN(fln);
+		val templateId = getTemplateIdFromFLN(fln);
+		if (!isExistingAirline(airlineId))
+			throw new NoSuchAirlineException(airlineId)		
 
-			val fromId = airportFromList.head;
-			val toId = airportToList.head;
-			val typeId = airplaneTypeList.head;
-			val templateIdInt = Integer.parseInt(templateId);
+		val fromId = airportFromList.head;
+		val toId = airportToList.head;
+		val typeId = airplaneTypeList.head;
+		val templateIdInt = Integer.parseInt(templateId);
 
-			if(!areUniqueSeatTypes(prices))
-				throw new NonUniqueSeatTypeException(prices);
+		if(!areUniqueSeatTypes(prices))
+			throw new NonUniqueSeatTypeException(prices);
 
-			if(!areExistingSeatTypes(prices))
-				throw new NoSuchSeatTypeException(prices);
+		if(!areExistingSeatTypes(prices))
+			throw new NoSuchSeatTypeException(prices);
 
-			if(!areCorrespondingSeats(prices, template.airplaneType))
-				throw new NoCorrespondingSeatsException(prices,template.airplaneType);
+		if(!areCorrespondingSeats(prices, template.airplaneType))
+			throw new NoCorrespondingSeatsException(prices,template.airplaneType);
 
-			if(count("Select Count(*) from Flighttime where (idFromAirport='" + fromId +"' and idToAirport='" + toId + "' and idAirplaneType='" + typeId + "')") != 1)
-				throw new NoFlightTimePresentException(fromId,toId,typeId);
+		if(count("Select Count(*) from Flighttime where (idFromAirport='" + fromId +"' and idToAirport='" + toId + "' and idAirplaneType='" + typeId + "')") != 1)
+			throw new NoFlightTimePresentException(fromId,toId,typeId);
 
-			if(count("Select Count(*) from Distance where (idFromAirport='" + fromId +"' and idToAirport='" + toId +"')") != 1)
-				throw new NoDistancePresentException(fromId,toId,typeId);
+		if(count("Select Count(*) from Distance where (idFromAirport='" + fromId +"' and idToAirport='" + toId +"')") != 1)
+			throw new NoDistancePresentException(fromId,toId,typeId);
 
-			var query = "INSERT INTO template(`idAirline`,`idTemplate`,`idAirplaneType`,`idAirportFrom`,`idAirportTo`) VALUES('" + airlineId + "','" + templateId + "','" + typeId + "','" + fromId + "','" + toId + "')";
-			(Q.u + query).execute();
+		var query = "INSERT INTO template(`idAirline`,`idTemplate`,`idAirplaneType`,`idAirportFrom`,`idAirportTo`) VALUES('" + airlineId + "','" + templateId + "','" + typeId + "','" + fromId + "','" + toId + "')";
+		(Q.u + query).execute();
 
-			addPeriods(periods,airlineId,templateIdInt);
+		addPeriods(periods,airlineId,templateIdInt);
 
-			for (seat <- prices) {
-				var priceVal = extractPrice(seat);
-				extractSeatNumbers(seat, template.airplaneType).foreach(seatNb => (Q.u + "insert into seatinstancetemplate(`idAirline`,`idTemplate`,`seatnumber`,`idAirplanetype`,`price`) values ('" + airlineId + "','" + (templateId+"") + "','" + (seatNb+"") + "','" + (typeId+"") + "','" + (priceVal+"") +"')").execute)
-			}
+		for (seat <- prices) {
+			var priceVal = extractPrice(seat);
+			extractSeatNumbers(seat, template.airplaneType).foreach(seatNb => (Q.u + "insert into seatinstancetemplate(`idAirline`,`idTemplate`,`seatnumber`,`idAirplanetype`,`price`) values ('" + airlineId + "','" + (templateId+"") + "','" + (seatNb+"") + "','" + (typeId+"") + "','" + (priceVal+"") +"')").execute)
 		}
 	}
 	
@@ -820,8 +815,6 @@ object Handler {
 
 	def addAirplaneType(airplaneType:AirplaneType_data, arrangement: List[Seat_data]) {
 		if(airplaneType.name != null) {
-      Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-        driver = "com.mysql.jdbc.Driver") withSession {
 			if (!airplaneType.name.matches("[a-zA-Z0-9\\s]+"))
 				throw new IllegalAirplaneTypeNameException(airplaneType.name);
 
@@ -837,7 +830,6 @@ object Handler {
 
 				insert(arrangement,getAirplaneTypeIds(AirplaneType(Filled(airplaneType.name))).head,AirplaneType(Filled(airplaneType.name)));
 			}
-		}
 	}
 
   def toSeatInstance_data(arrangement: List[Seat_data]) : List[SeatInstance_data] = {
@@ -872,17 +864,14 @@ object Handler {
 	}
 
 	def addSeats(airplaneType:AirplaneType,arrangement:List[Seat_data]) {
-		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-				driver = "com.mysql.jdbc.Driver") withSession {
-			var airplaneTypeIds = getAirplaneTypeIds(airplaneType);
-			if(airplaneTypeIds.size > 1)
-				throw new NonUniqueAirplaneTypeException(airplaneType);
-			if(airplaneTypeIds.size ==0)
-				throw new NoSuchAirplaneTypeException(airplaneType);
-			var airplane = airplaneTypeIds.head;
+		var airplaneTypeIds = getAirplaneTypeIds(airplaneType);
+		if(airplaneTypeIds.size > 1)
+			throw new NonUniqueAirplaneTypeException(airplaneType);
+		if(airplaneTypeIds.size ==0)
+			throw new NoSuchAirplaneTypeException(airplaneType);
+		var airplane = airplaneTypeIds.head;
 
-			insert(arrangement,airplane,airplaneType);
-		}
+		insert(arrangement,airplane,airplaneType);
 	}
 
   def generateSeatNumbers(seat:Seat_data,airplaneType:AirplaneType) : List[Int] = {
@@ -916,7 +905,7 @@ object Handler {
 		if(airline.name != null) {
 			if (!airline.name.matches("[a-zA-Z09\\s]+"))
 				throw new IllegalAirlineNameException(airline.name);
-			if(airline.short.length() > 3 || airline.short.length() == 0 )
+			if(airline.short.length < 2 || airline.short.length > 3 )
 				throw new IllegalAirlineCodeException(airline.short);
 			if (hasUniqueResult(select("count(*)", "airline", "(name='" + airline.name + "')")))
 				throw new AlreadyExistingAirlineNameException(airline.name);
@@ -948,10 +937,8 @@ object Handler {
 			if(hasUniqueResult(select("Count(*)","SeatType","name='" + name + "'")))
 				throw new AlreadyExistingSeatTypeException(name:String);
 
-			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-					driver = "com.mysql.jdbc.Driver") withSession {
-				insert(name);
-			}
+			
+			insert(name);
 		}
 	}
 
@@ -1042,8 +1029,6 @@ object Handler {
 	}
 	
 	def changeFlightSeatInstances(flight: Flight, seatInstances: SeatNumberInstances_data) {
-	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-				driver = "com.mysql.jdbc.Driver") withSession {
 	  val price = seatInstances.price;
 	  val flightNumbers = getFlightIds(flight);	  
 	  val firstSeatNumber = seatInstances.number;
@@ -1067,14 +1052,11 @@ object Handler {
 	    	//println(query);
 	    	execute(query);
 	      }
-	    }
 	  }
 	  }
 	}
 	
 	def changeFlightSeatInstances(flight: Flight, seatInstances: SeatTypeInstances_data) {
-	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-				driver = "com.mysql.jdbc.Driver") withSession {
 	  val price = seatInstances.price;
 	  val flightNumbers = getFlightIds(flight);
 	  val seatType = seatInstances.seatType;
@@ -1092,7 +1074,6 @@ object Handler {
 	      //println(query);
 	      execute(query);
 	    }
-	  }
 	  }
 	}
 	
@@ -1126,8 +1107,6 @@ object Handler {
 	}
 	
 	def changeTemplateSeatInstances(template: Template,seatInstances: SeatNumberInstances_data) {
-	   Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-				driver = "com.mysql.jdbc.Driver") withSession {
 	  val price = seatInstances.price;
 	  val templateIds = getTemplateIds(template);
 	  val firstSeatNumber = seatInstances.number;
@@ -1151,14 +1130,11 @@ object Handler {
 	    	//println(query);
 	    	execute(query);
 	      }
-	    }
-	  }	  
+	    }	  
 	}
 	}
 	
 	def changeTemplateSeatInstances(template: Template, seatInstances: SeatTypeInstances_data) {
-	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-				driver = "com.mysql.jdbc.Driver") withSession {
 	  val price = seatInstances.price;
 	  val templateIds = getTemplateIds(template);
 	  val seatType = seatInstances.seatType;
@@ -1176,7 +1152,6 @@ object Handler {
 	      //println(query);
 	      execute(query);
 	    }
-	  }
 	  }
 	}
 	
@@ -1290,8 +1265,6 @@ object Handler {
 
 		// make flights of the given timeperiod and template(if present)
 		// select necessary flights from actual flight view
-		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-				driver = "com.mysql.jdbc.Driver") withSession {
 			val flightIds = getFlightIds(flightSelector);
       val map: HashMap[Int,Int] = getAirplaneTypeIdMap(flightIds);
 
@@ -1304,7 +1277,6 @@ object Handler {
       if(idAirplaneTypeNew != null) {
         handlePriceInformation(flightIds,changeFlight, idAirplaneTypeNew, map)
       }
-		}
 	}
 
   def getAirplaneTypeIdMap(flightIds:List[Int]) : HashMap[Int,Int]= {
@@ -1732,17 +1704,11 @@ object Handler {
 	}
 
 	def execute[Type](func: (Type => Unit), data: Type) {
-		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-				driver = "com.mysql.jdbc.Driver") withSession {
-			func(data);
-		}
+		func(data);
 	}
 
 	def execute(query:String) {
-		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-				driver = "com.mysql.jdbc.Driver") withSession {
-			(Q.u + query).execute
-		}
+		(Q.u + query).execute
 	}
 
 	/**
@@ -1750,10 +1716,7 @@ object Handler {
 	 */
 	def exists(query: String): Boolean = {
 			var result = false;
-			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-					driver = "com.mysql.jdbc.Driver") withSession {
-				result = (count(query) >= 1);
-			}
+			result = (count(query) >= 1);
 			return result;
 	}
 
@@ -1762,10 +1725,7 @@ object Handler {
 	 */
 	def hasUniqueResult(query: String): Boolean = {
 			var result = false;
-			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-					driver = "com.mysql.jdbc.Driver") withSession {
-				result = (count(query) == 1);
-			}
+			result = (count(query) == 1);
 			return result;
 	}
 
