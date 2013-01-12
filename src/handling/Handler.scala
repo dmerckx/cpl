@@ -489,12 +489,12 @@ object Handler {
 		  return "";
 		}
 		var listi = list;
-	  	while(list.size > 1) {
+	  	while(listi.size >= 1) {
 	  	  sb.append(list.head.toString)
 	  	  sb.append(" OR ")
 	  	  listi = listi.tail;
-	  	}
-	  	return sb.toString;
+      }
+	  	return sb.substring(0,sb.length-3);
 	}
 	
 	def commafy(list : List[String]) : String = {
@@ -503,16 +503,17 @@ object Handler {
 		  return "";
 		}
 		var listi = list;
-	  	while(list.size > 1) {
-	  	  sb.append(list.head.toString)
+	  	while(listi.size >= 1) {
+	  	  sb.append(listi.head.toString)
 	  	  sb.append(", ")
 	  	  listi = listi.tail;
 	  	}
-	  	return sb.toString;
+	  	return sb.substring(0,sb.length-2);
 	}
 	
 	def changeTemplate(template:Template, change:Template_change) = {
 	  val templateIds : List[handling.TemplateId] = getTemplateIds(template);
+    println("matched templates: " + templateIds);
 	  val nrTemplateIds = templateIds.size;
 	  var airplaneTypeChange = false;
 	  if (nrTemplateIds >= 1) {
@@ -522,11 +523,12 @@ object Handler {
 		    case Template_change(Filled(fln),_,_,_) => 
 		      if (nrTemplateIds > 1)
 		        throw new NonUniqueTemplateException(template);
-		      val templateIdsChange = getTemplateIdFromFLN(fln);
+		      /*val templateIdsChange = getTemplateIdFromFLN(fln);
+          println("changetemplate: " + templateIdsChange);
 		      if (templateIdsChange.size > 1)
 		        throw new NonUniqueNewTemplateException(change);
 		      if (templateIdsChange.size < 1)
-		        throw new NoSuchNewTemplateException(change);
+		        throw new NoSuchNewTemplateException(change);*/
 		      columns = "idTemplate" :: columns
 		      values = templateIds.head.idTemplate.toString :: values
 		      columns = "idAirline" :: columns
@@ -580,11 +582,12 @@ object Handler {
 				    	"`idTemplate` = '" + t.idTemplate + "'"+
 			    	")")) +
 		    	")";
+      println("sqlquery: " + sqlQuery)
 		  execute(sqlQuery);
 		  //Update the prices of the seat instances in case of changed airplane type
 		  if (airplaneTypeChange)
 		    templateIds.foreach(t => 
-		      execute("CALL update_seat_instance_templates("+t.idAirline + "," + t.idTemplate + ")"));
+		      execute("CALL update_seat_instance_templates('"+t.idAirline + "','" + t.idTemplate + "')"));
 	  }
 	}
 
@@ -1554,8 +1557,11 @@ object Handler {
 
 			var select = "";
 			select+= addOr(airlineIds,"idAirline");
+      select+= addAnd(select);
 			select+= addOr(airportFromIds,"idAirportFrom");
+      select+= addAnd(select);
 			select+= addOr(airportToIds,"idAirportTo");
+      select+= addAnd(select);
 			select+= addOr(airplaneTypeIds.asInstanceOf[List[Integer]],"idAirplaneType");
 
 			if(!flnVal.equals("")) {
@@ -1564,10 +1570,12 @@ object Handler {
 				select = select + addAnd(select);
 				select += "idTemplate='" + getTemplateIdFromFLN(flnVal) + "'";
 			}
+
 			if(!select.equals(""))
 				result = getTemplateIds("Select idAirline,idTemplate from template where " + select);
 			else
 				result = getTemplateIds("Select idAirline,idTemplate from template");
+
 			return result;
 	}
 
