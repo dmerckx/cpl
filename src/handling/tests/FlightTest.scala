@@ -34,7 +34,7 @@ object FlightTest {
 	  var dateFrom = DateTime(Date(20,3,2013),Empty());
 	  var dateTo = DateTime(Date(20,3,2012),Empty());
 	  var period = TimePeriod(dateFrom,dateTo);
-	  var airplaneType = AirplaneType(Filled("BOEING747"));
+	  var airplaneType = AirplaneType(Filled("BOEING727"));
 	  var flightSelector1 = Flight1(Filled(template1),DateTime(date,Filled(time)),Empty(),Empty(),Empty());
 	  var flightSelector2 = Flight3(Filled(template1),Empty(),Empty(),Empty(),period);
 	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",

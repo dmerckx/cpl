@@ -1,6 +1,8 @@
 package handling
 
 import syntax._
+import java.util
+
 //Database
 import scala.slick.session.Database
 import Database.threadLocalSession
@@ -10,8 +12,8 @@ import Q.interpolation
 //Exceptions
 import handling.exceptions._
 
-import java.util.HashMap;
-import java.util.Calendar
+import java.util.{HashMap, Calendar}
+;
 import java.text.SimpleDateFormat;
 
 case class Count(nr: Int);
@@ -178,7 +180,7 @@ object Handler {
 	def insert(airport: Airport_data): Unit = {
 			val cityName = getCityName(airport);
 			val id = getIds("SELECT idCity FROM CITY WHERE (city.name='" + cityName +"')").foreach(id => 
-			(Q.u + "INSERT INTO airport(`code`,`city`,`name`) VALUES ('" + airport.short + "','" + (id+"") + "','" + airport.name + "')").execute); 
+			(Q.u + "INSERT INTO airport(`idAirport`,`idCity`,`name`) VALUES ('" + airport.short + "','" + (id+"") + "','" + airport.name + "')").execute);
 	}
 
 	def addAirport(airport: Airport_data) {
@@ -186,13 +188,13 @@ object Handler {
 		var cityName = getCityName(airport);
 		if (airport.name != null && cityName != "") {
 
-			if (!airport.name.matches("[a-zA-Z]+"))
+			if (!airport.name.matches("[a-zA-Z0-9\\s]+"))
 				throw new IllegalAirportNameException(airport.name);
 
 			if (!hasUniqueResult(select("count(*)", "city", "name='" + cityName + "'")))
 				throw new NoSuchCityException(cityName);
 
-			if (hasUniqueResult(select("count(*)", "airport", "(name='" + airport.name + "'" + " and " + "code='" + airport.short + "')")))
+			if (hasUniqueResult(select("count(*)", "airport", "(name='" + airport.name + "'" + " and " + "idAirport='" + airport.short + "')")))
 				throw new AlreadyExistingAirportException(airport.name, airport.short, cityName);
 
 			//all checks are ok, add this airport to the database 
@@ -225,7 +227,7 @@ object Handler {
 			val airportToList = getAirportToIds(dist);
 			for(idFrom <- airportFromList) {
 				for(idTo <- airportToList) {
-					(Q.u + "INSERT INTO distance('idFromCity','idToCity','distance') VALUES ('" + idFrom + "','" + idTo + "','" + (dist.dist+"") + "')").execute();
+					(Q.u + "INSERT INTO distance(`idFromAirport`,`idToAirport`,`distance`) VALUES ('" + idFrom + "','" + idTo + "','" + (dist.dist+"") + "')").execute;
 				}
 			}
 	}
@@ -267,8 +269,8 @@ object Handler {
 			for (fromId <- airportFromList) {
 				for (toId <- airportToList) {
 					for (typeId <- airplaneTypeList) {
-						val query = "INSERT INTO flighttime(`idFromCity`,`idToCity`,`idAirplaneType`,`duration`) VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')";
-						(Q.u + query).execute();			
+						val query = "INSERT INTO flighttime(`idFromAirport`,`idToAirport`,`idAirplaneType`,`duration`) VALUES ('" + fromId + "','" + toId + "','" + (typeId+"") + "','" + durationString + "')";
+						(Q.u + query).execute;
 					}
 				}
 			}
@@ -467,23 +469,32 @@ object Handler {
 		}
 	}
 
+  def isExpectedAmount(seat:SeatInstance_data, amount:Int) : Boolean = {
+       seat match {
+         case SeatNumberInstances_data(_,Filled(amt),_) =>
+           return amt==amount;
+         case SeatNumberInstances_data(_,Empty(),_) =>
+           return 1==amount;
+         case SeatTypeInstances_data(_,_) =>
+           return amount >=1;
+         case _ => return true;
+       }
+  }
+
 	def areCorrespondingSeats(arrangement:List[SeatInstance_data], airplaneType:AirplaneType) : Boolean = {
 			var query = "select count(*) from seat where (seatNumber='";
 			var totalSeats = 0;
 			for(seat <- arrangement) {
-				var seatNbs = extractSeatNumbers(seat, airplaneType);
-				seatNbs.foreach(seatNb => query += seatNb+"' or SeatNumber='");
-				totalSeats += seatNbs.size;
+				val databaseSeatNbs = extractSeatNumbers(seat, airplaneType);
+
+        if(!isExpectedAmount(seat,databaseSeatNbs.size)) {
+          throw new IllegalAmountOfSpecifiedSeatsException();
+        }
 			}
-			if(arrangement.size >= 1) {
-				query = query.substring(0, query.length()-16);
-				query += ")";
-				if(count(query) == totalSeats)
-					return true;
-				else
-					return false;
-			} else
-				return true;
+    if(totalSeats >=1) {
+      query = query.substring(0, query.length()-16);
+    }
+    return true;
 	}
 
 	def areValidSeatTypes(func: (String => Boolean), param:List[SeatInstance_data]) : Boolean = {
@@ -493,6 +504,7 @@ object Handler {
 			case SeatTypeInstances_data(seatType,_) => result = result && func(seatType);
 			case _ => result = result && true;
 			}
+
 		}
 		return result;
 	}
@@ -502,7 +514,7 @@ object Handler {
 	}
 
 	def isUniqueSeatType(seatType:String) : Boolean = {
-		return !(count("select count(*) from seattype where name='" + seatType + "'") > 1);
+		return (count("select count(*) from seattype where name='" + seatType + "'") == 1);
 	}
 
 	def areExistingSeatTypes(arrangement:List[SeatInstance_data]) : Boolean = {
@@ -563,6 +575,19 @@ object Handler {
 		return years + "-" + months + "-" + days;
 	}
 
+  def weekToInt(weekday:String) : Int = {
+    weekday match {
+      case "monday" => 2;
+      case "tuesday" => 3;
+      case "wednesday" => 4;
+      case "thursday" => 5;
+      case "friday" => 6;
+      case "saturday" => 7;
+      case "sunday" => 1;
+      case d => throw new NoSuchWeekdayException(d);
+    }
+  }
+
 	def getPeriodQuery(period: Period_data, airlineId: String, templateId: Int) : String = {
 		var dateFromString = "";
 		var dateToString = "";
@@ -577,7 +602,7 @@ object Handler {
 		case _ => 
 		}
 		period match {
-		case Period_data(_,_,Filled(d),_) => weekday = Integer.parseInt(d);
+		case Period_data(_,_,Filled(d),_) => weekday = weekToInt(d);
 		case _ =>
 		}
 		if(weekday<0 || weekday >7 )
@@ -657,6 +682,8 @@ object Handler {
 				result = defaultSeatNumber :: result;
 				defaultSeatNumber = defaultSeatNumber + 1;
 			}
+    if(count("select count(*) from seat where idAirplaneType='" + getAirplaneTypeIds(airplaneType).head + "' and seatNumber='" + (defaultSeatNumber-1) + "'") != 1)
+      throw new IllegalAmountOfSpecifiedSeatsException();
 			return result;
 	}
 
@@ -669,20 +696,33 @@ object Handler {
 
 	def addAirplaneType(airplaneType:AirplaneType_data, arrangement: List[Seat_data]) {
 		if(airplaneType.name != null) {
-			if (!airplaneType.name.matches("[a-zA-Z0-9]+"))
+      Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+        driver = "com.mysql.jdbc.Driver") withSession {
+			if (!airplaneType.name.matches("[a-zA-Z0-9\\s]+"))
 				throw new IllegalAirplaneTypeNameException(airplaneType.name);
 
 			if (hasUniqueResult(select("count(*)", "airplanetype", "(name='" + airplaneType.name + "')")))
 				throw new AlreadyExistingAirplaneTypeException(airplaneType.name);
 
+      if(!areUniqueSeatTypes(toSeatInstance_data(arrangement))) {
+        throw new NonUniqueSeatTypeException();
+      }
+
 			execute[AirplaneType_data](insert, airplaneType);
 
-			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
-					driver = "com.mysql.jdbc.Driver") withSession {
+
 				insert(arrangement,getAirplaneTypeIds(AirplaneType(Filled(airplaneType.name))).head,AirplaneType(Filled(airplaneType.name)));
 			}
 		}
 	}
+
+  def toSeatInstance_data(arrangement: List[Seat_data]) : List[SeatInstance_data] = {
+    var result = List[SeatInstance_data]();
+    for(seat <- arrangement) {
+      result = SeatTypeInstances_data(seat.seatType,Euro(Empty(),Empty())) :: result;
+    }
+    return result;
+  }
 
 	def changeAirplaneType(airplaneFrom:AirplaneType, airplaneTo:AirplaneType) {
 		//TODO
@@ -697,11 +737,14 @@ object Handler {
 	////////////////////////////////////////////////////////////////////////////////	
 
 	def insert(arrangement:List[Seat_data],airplaneId:Int, airplaneType:AirplaneType) = {
-		for(seat <- arrangement)
-			getIds("Select idSeatType from SeatType where name='" + seat.seatType +"'").foreach(seatType =>
-			for(seatNumber <- getSeatNumbers(airplaneType, seat)) {
-				(Q.u + "INSERT INTO seat(`idSeatType`,`idAirplaneType`,`seatNumber`) VALUES ('" + (seatType+"") + "','" + (airplaneId+"") + "','" + (seatNumber+"") + "')").execute;
-			});
+		for(seat <- arrangement) {
+			for(seatType <- getIds("Select idSeatType from SeatType where name='" + seat.seatType +"'")) {
+			  for(seatNumber <- generateSeatNumbers(seat,airplaneType)) {
+          val temp :String = airplaneId+"";
+				  (Q.u + "INSERT INTO seat(`idSeatType`,`idAirplaneType`,`seatNumber`) VALUES ('" + (seatType.toString()+"") + "','" + (temp.toString()) + "','" + (seatNumber.toString()+"") + "') ON DUPLICATE KEY UPDATE idSeatType='" + seatType.toString() +"'").execute;
+        }
+			}
+    }
 	}
 
 	def addSeats(airplaneType:AirplaneType,arrangement:List[Seat_data]) {
@@ -718,6 +761,25 @@ object Handler {
 		}
 	}
 
+  def generateSeatNumbers(seat:Seat_data,airplaneType:AirplaneType) : List[Int] = {
+    var defaultSeatNumber = getInitialSeatNumber(airplaneType);
+    var defaultAmount = 1;
+    var result = List[Int]();
+    seat match {
+      case Seat_data(Filled(number),_, _) => defaultSeatNumber = number;
+      case _ =>
+    }
+    seat match {
+      case Seat_data(_,Filled(amount), _) => defaultAmount = amount;
+      case _ =>
+    }
+    while(result.size != defaultAmount) {
+      result = defaultSeatNumber :: result;
+      defaultSeatNumber = defaultSeatNumber + 1;
+    }
+    return result;
+  }
+
 	////////////////////////////////////////////////////////////////////////////////
 	// Airline /////////
 	////////////////////////////////////////////////////////////////////////////////
@@ -728,7 +790,7 @@ object Handler {
 
 	def addAirline(airline:Airline_data) {
 		if(airline.name != null) {
-			if (!airline.name.matches("[a-zA-Z]+"))
+			if (!airline.name.matches("[a-zA-Z09\\s]+"))
 				throw new IllegalAirlineNameException(airline.name);
 			if(airline.short.length() > 3 || airline.short.length() == 0 )
 				throw new IllegalAirlineCodeException(airline.short);
@@ -990,63 +1052,88 @@ object Handler {
 		// select necessary flights from actual flight view
 		Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
 				driver = "com.mysql.jdbc.Driver") withSession {
-			var flightIds = getFlightIds(flightSelector);
-			println("matched flight ids: " + flightIds);
+			val flightIds = getFlightIds(flightSelector);
+      val map: HashMap[Int,Int] = getAirplaneTypeIdMap(flightIds);
+
 			checkPrecedingConstraints(flightIds, getArrival(changeFlight), getDeparture(changeFlight));
-			if(idAirplaneTypeNew != null) {
-				val query = handlePriceInformation(flightIds,changeFlight, idAirplaneTypeNew);
-				(Q.u + query).execute;
-			}
-			if(flightIds.size > 1) {
+
+			if(flightIds.size >= 1) {
 				val query = makeFlightUpdateQuery(flightIds,changeFlight);
 				(Q.u + query).execute;
 			}
+      if(idAirplaneTypeNew != null) {
+        handlePriceInformation(flightIds,changeFlight, idAirplaneTypeNew, map)
+      }
 		}
 	}
 
-	def handlePriceInformation(flightIds:List[Int],changeFlight:Flight_change, airplaneTypeNew:AirplaneType) : String = {
+  def getAirplaneTypeIdMap(flightIds:List[Int]) : HashMap[Int,Int]= {
+    var map: HashMap[Int,Int] = new HashMap[Int,Int];
+     flightIds.foreach(id => map.put(id,getAirplaneTypeOfFlight(id)));
+    return map;
+  }
+
+	def handlePriceInformation(flightIds:List[Int],changeFlight:Flight_change, airplaneTypeNew:AirplaneType, map:HashMap[Int,Int])  {
 	  var idAirplaneTypeNew = getAirplaneTypeIds(airplaneTypeNew).head;
 	  for(id <- flightIds) {
-	    var idAirplaneTypeOld = getAirplaneTypeOfFlight(id);
+	    val idAirplaneTypeOld = map.get(id);
+      val seatnumbers = getSeatNumbers(id,idAirplaneTypeOld) ;
 	    for(idSeatType <- getSeatTypes(idAirplaneTypeNew)) {
-	      var price = getPrice(idSeatType,idAirplaneTypeOld);
-	       makeNewSeatInstances(id,price,idSeatType,idAirplaneTypeNew,idAirplaneTypeOld); 
-//	       removeOldSeatInstance(id,idSeatType);
+	      val price = getPrice(idSeatType,idAirplaneTypeOld, id);
+        removeOldSeatInstances(id,idAirplaneTypeOld);
+	       makeNewSeatInstances(id,price,seatnumbers.get(idSeatType),idAirplaneTypeNew,idAirplaneTypeOld);
 	    }
 	  }
-	  return "";
 	}
-	
+
+  def getSeatNumbers(idFlight:Int, airplaneTypeId:Int) :  HashMap[Int,List[Int]] = {
+    val map:HashMap[Int,List[Int]] = new HashMap[Int,List[Int]]();
+      var list = List[Int]();
+    val seattypequery =  "select idSeattype from actualseatinstances where idFlight='" + idFlight + "' and actualseatinstances.idAirplaneType='" + airplaneTypeId + "' group by idseattype";
+    for(seattypeid <- getIds(seattypequery)) {
+      val query = "select actualseatinstances.seatnumber from actualseatinstances where idFlight='" + idFlight + "' and actualseatinstances.idAirplaneType='" + airplaneTypeId + "' and idseattype='" + seattypeid + "'";
+      map.put(seattypeid,getIds(query)) ;
+    }
+     return map;
+  }
+
+  def removeOldSeatInstances(idFlight:Int,idAirplaneTypeold:Int)  {
+    val query = "delete from seatinstance where idFlight='" + idFlight + "' and seatnumber IN (select seatnumber from seat where idAirplaneType='" + (idAirplaneTypeold+"") +"')";
+    execute(query);
+  }
+
 	def getAirplaneTypeOfFlight(idFlight:Int) : Int = {
 	  val query = "select idAirplaneType from actualflight where idFlight='" + idFlight + "'";
 	  return getIds(query).head;
 	}
 	
 	def getSeatTypes(idAirplaneType:Int) : List[Int] =  {
-	  val query = "select seattype from (airplanetype join (seat join seattype on seat.idSeattype=seattype.idSeattype) on airplanetype.idAirplaneType=seat.idAirplaneType) where airplaneidAirplaneType='"+ idAirplaneType +"'";
+	  val query = "select seat.idSeattype from (airplanetype join seat on airplanetype.idAirplaneType=seat.idAirplaneType) where airplanetype.idAirplaneType='"+ idAirplaneType +"' group by seat.idSeattype";
 	  return getIds(query);
 	}
 	
-	def makeNewSeatInstances(id:Int,price:Double,idSeatType:Int,idAirplaneType:Int, idAirplaneTypeOld:Int) {  
-	  val query = "insert into seatinstance(`idFlight`,`Price`,`SeatNumber`,`idAirplaneType`) select '"+ (id+"") + "','" + (price+"") + "',seatNumber,'" + idAirplaneType +"'" + 
-			  		" from actualseatinstances where idFlight='" + id + "' and idSeatType='" + idSeatType + "' and idAirplaneType='" + idAirplaneTypeOld + "'";
+	def makeNewSeatInstances(idFlight:Int,price:Double,seatnumbers:List[Int],idAirplaneType:Int, idAirplaneTypeOld:Int) {
+    for(seatNb <- seatnumbers) {
+	  val query = "insert into seatinstance(`idFlight`,`Price`,`SeatNumber`,`idAirplaneType`) values ('"+ (idFlight+"") + "','" + (price+"") + "','" + seatNb + "','" + idAirplaneType +"')";
 	  execute(query);
+    }
 	}
 	
-	def getPrice(idSeatType:Int, idAirplaneType:Int) : Double = {
-	  val query = "select price from actualseatinstances where seatnumber='" + "(select min(seatnumber) from actualseatinstances where idAirplaneType='"+ idAirplaneType + "' and idSeatType='" + idSeatType + "')";
-	  println(query);
-	  return getPrice(query);
+	def getPrice(idSeatType:Int, idAirplaneType:Int, idFlight:Int) : Double = {
+    var price = 0d;
+    if(count("select price from actualseatinstances where seatnumber=" + "(select min(seatnumber) from actualseatinstances where idAirplaneType='"+ idAirplaneType + "' and idSeatType='" + idSeatType + "') and idAirplaneType='"+ idAirplaneType + "' and idSeatType='" + idSeatType + "' and idFlight='" + idFlight +"'") == 1) {
+	    val query = "select price from actualseatinstances where seatnumber=" + "(select min(seatnumber) from actualseatinstances where idAirplaneType='"+ idAirplaneType + "' and idSeatType='" + idSeatType + "') and idAirplaneType='"+ idAirplaneType + "' and idSeatType='" + idSeatType + "' and idFlight='" + idFlight +"'";
+      price = getPrice(query);
+    }
+    else {
+      price = getPrice("select min(price) from actualseatinstances where idAirplaneType='"+ idAirplaneType + "'");
+    }
+	  return price;
 	}
 	
 	def checkPrecedingConstraints(flightIds:List[Int], arrival:DateTime, departure:DateTime) {
 	  if(arrival != null && departure != null) {
-	    println("departure: " + departure);
-	    println("arrival: " + arrival);
 	    if (departure.compare(arrival) != -1) {
-	      println("departure: " + departure);
-	      println("arrival: " + arrival);
-	      println("comparison of the dates: " + departure.compare(arrival));
 	      throw new IllegalArrivalTimeException();
 	    }
 	  }
@@ -1062,9 +1149,6 @@ object Handler {
 	    comp = "arrival<";
 	  if( time != null ) {
 			for(id <- flightIds) {
-			  println(id);
-			  println(time);
-			  println("query to check violation of times: " + "select count(*) from actualflight where " + comp + "'" + getDateTime(time) + "' and idFlight='" + (id+"") + "'");
 				if(count("select count(*) from actualflight where " + comp + "'" + getDateTime(time) + "' and idFlight='" + (id+"") + "'") > 0)
 					throw new IllegalArrivalTimeException();
 			}
@@ -1072,7 +1156,6 @@ object Handler {
 	}
 
 	def makeFlightUpdateQuery(idsToUpdate:List[Int],flight:Flight_change) : String = {
-			println("ids to update: " + idsToUpdate);
 			var airplaneType: AirplaneType = getAirplaneType(flight);
 			var departure:DateTime = getDeparture(flight);
 			var arrival:DateTime = getArrival(flight);
@@ -1098,7 +1181,6 @@ object Handler {
 				set = set.substring(0,set.length()-4);
 				set+=")";
 			}
-			println("update query: " + set);
 			return set;
 	}
 
@@ -1375,7 +1457,7 @@ object Handler {
 				if(!select.equals(""))
 					select+= " and ";
 				select+="("
-						airportCities.foreach(id => select += "city='" + id +"' or " );
+						airportCities.foreach(id => select += "idCity='" + id +"' or " );
 				select = select.substring(0, select.length()-4); //remove last "or"
 				select+=")";
 			}
@@ -1462,8 +1544,7 @@ object Handler {
 	implicit val getSeatNumberResult = GetResult(r => SeatNumber(r.nextInt));
 	def getSeatNumbers(query: String): List[Int] = {
 			var result = List[Int]();
-			val q = Q.queryNA[SeatNumber](query);
-			result = q.first.nr :: result;
+			Q.queryNA[SeatNumber](query).foreach(r=> result = r.nr :: result);
 			return result;
 	}
 	

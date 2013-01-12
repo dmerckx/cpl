@@ -89,6 +89,7 @@ object CityTest  {
 
 	def contains(name:String) : Boolean = {
 			var result = 0;
+
 			Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
 					driver = "com.mysql.jdbc.Driver") withSession {
 				result = count("select count(*) from city where name='"+ name+ "'");
@@ -107,6 +108,7 @@ object CityTest  {
 	implicit val getCityNameResult = GetResult(r => CityName(r.nextString));
 	def cityName(query : String) : String = {
 			val q = Q.queryNA[CityName](query);
+
 			return q.first.name;
 	}
 

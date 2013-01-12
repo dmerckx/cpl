@@ -73,5 +73,7 @@ case class SeatNumberOutOfRangeException() extends Exception
 case class OverlappingSeatInstancesException() extends Exception
 case class SameSeatTypesException() extends Exception
 
+
+case class IllegalAmountOfSpecifiedSeatsException() extends Exception
 class Exceptions {
 }
