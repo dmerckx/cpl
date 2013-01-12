@@ -124,7 +124,7 @@ object Handler {
 			if (!name.matches("[a-zA-Z]+"))
 				throw new IllegalCityNameException(name);
 			if(!hasUniqueResult(select("count(*)", "city", "name='" + name + "'")))
-				throw new NonUniqueCityNameException();
+				throw new NonUniqueCityNameException(name);
 
 			if (exists(select("count(*)", "city", "name='" + toName + "'")))
 				throw new AlreadyExistingCityNameException(toName);
@@ -147,7 +147,7 @@ object Handler {
 	def removeCity(name: String) {
 		if (name != null) {
 			if(areReferencesTo(name))
-				throw new ExistingReferenceException();
+				throw new ExistingReferenceException(name);
 			execute(remove_City, name);
 		}
 	}
@@ -258,7 +258,7 @@ object Handler {
 			//TODO unique flight checking!
 			val duration = flightTime.time;
 			duration match {
-			case Time(Empty(),Empty(),Empty()) => throw new NoDurationException();
+			case Time(Empty(),Empty(),Empty()) => throw new NoDurationException(duration);
 			case _ => 
 			}
 			val airportFromList = getAirportFromIds(flightTime);
@@ -339,7 +339,7 @@ object Handler {
 
 	def createDurationString(duration: Time) : String = {
 			if (!isValidDuration(duration)) {
-				throw new IllegalDurationException();
+				throw new IllegalDurationException(duration);
 			}
 			else {
 				return getDurationHours(duration) + ":" + getDurationMinutes(duration) + ":" + getDurationSeconds(duration);
@@ -442,19 +442,19 @@ object Handler {
 			val templateIdInt = Integer.parseInt(templateId);
 
 			if(!areUniqueSeatTypes(prices))
-				throw new NonUniqueSeatTypeException();
+				throw new NonUniqueSeatTypeException(prices);
 
 			if(!areExistingSeatTypes(prices))
-				throw new NoSuchSeatTypeException();
+				throw new NoSuchSeatTypeException(prices);
 
 			if(!areCorrespondingSeats(prices, template.airplaneType))
-				throw new NoCorrespondingSeatsException();
+				throw new NoCorrespondingSeatsException(prices,template.airplaneType);
 
 			if(count("Select Count(*) from Flighttime where (idFromAirport='" + fromId +"' and idToAirport='" + toId + "' and idAirplaneType='" + typeId + "')") != 1)
-				throw new NoFlightTimePresentException();
+				throw new NoFlightTimePresentException(fromId,toId,typeId);
 
 			if(count("Select Count(*) from Distance where (idFromAirport='" + fromId +"' and idToAirport='" + toId +"')") != 1)
-				throw new NoDistancePresentException();
+				throw new NoDistancePresentException(fromId,toId,typeId);
 
 			var query = "INSERT INTO template(`idAirline`,`idTemplate`,`idAirplaneType`,`idAirportFrom`,`idAirportTo`) VALUES('" + airlineId + "','" + templateId + "','" + typeId + "','" + fromId + "','" + toId + "')";
 			(Q.u + query).execute();
@@ -710,9 +710,9 @@ object Handler {
 				driver = "com.mysql.jdbc.Driver") withSession {
 			var airplaneTypeIds = getAirplaneTypeIds(airplaneType);
 			if(airplaneTypeIds.size > 1)
-				throw new NonUniqueAirplaneTypeException();
+				throw new NonUniqueAirplaneTypeException(airplaneType);
 			if(airplaneTypeIds.size ==0)
-				throw new NoSuchAirplaneTypeException();
+				throw new NoSuchAirplaneTypeException(airplaneType);
 			var airplane = airplaneTypeIds.head;
 
 			insert(arrangement,airplane,airplaneType);
@@ -894,7 +894,7 @@ object Handler {
 	  val flightNumbers = getFlightIds(flight);
 	  val seatType = seatInstances.seatType;
 	  if (count(select("Count(*)","SeatType","name='" + seatType + "'")) < 1) {
-	    throw new NoSuchSeatTypeException();
+	    throw new NoSuchSeatTypeException(List(seatInstances));
 	  }
 	  val priceString = priceToDouble(price) + "";
 	  for (flightId <- flightNumbers) {
@@ -978,7 +978,7 @@ object Handler {
 	  val templateIds = getTemplateIds(template);
 	  val seatType = seatInstances.seatType;
 	  if (count(select("Count(*)","SeatType","name='" + seatType + "'")) < 1) {
-	    throw new NoSuchSeatTypeException();
+	    throw new NoSuchSeatTypeException(List(seatInstances));
 	  }
 	  val priceString = priceToDouble(price) + "";
 	  for (templateId <- templateIds) {
@@ -1061,10 +1061,10 @@ object Handler {
 	def addFlight2(Flight:Flight_data, prices: List[SeatInstance_data]) {
 
 		if(!areUniqueSeatTypes(prices))
-			throw new NonUniqueSeatTypeException();
+			throw new NonUniqueSeatTypeException(prices);
 
 		if(!areExistingSeatTypes(prices))
-			throw new NoSuchSeatTypeException();
+			throw new NoSuchSeatTypeException(prices);
 		//TODO
 		//		extractAirplaneTypes(flight);
 		//		
