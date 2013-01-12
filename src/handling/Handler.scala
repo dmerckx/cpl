@@ -32,52 +32,56 @@ object Handler {
 	 * Main method of the handler. All output of the parser will be processed by this method to be mapped on an actual database operation.
 	 */
 	def handle(op: Operation) = {
-		op match {
-			//CITY
-		case AddCity(data) => addCity(data);
-		case ChangeCity(city, to) => changeCity(city, to);
-		case RemoveCity(city) => removeCity(city);
-
-		//AIRPORT
-		case AddAirport(airport) => addAirport(airport);
-		case ChangeAirport(airportFrom, airportTo) => changeAirport(airportFrom, airportTo);
-		case RemoveAirport(airport) => removeAirport(airport);
-
-		//AIRPLANETYPE
-		case AddAirplaneType(airplaneType , arrangement) => addAirplaneType(airplaneType, arrangement);
-		case ChangeAirplaneType(airplaneTypeFrom, airplaneTypeTo) => changeAirplaneType(airplaneTypeFrom, airplaneTypeTo);
-		case RemoveAirplaneType(airplaneType) => removeAirplaneType(airplaneType);
-
-		//AIRLINE
-		case AddAirline(airline) => addAirline(airline);
-		case ChangeAirline(airlineFrom, airlineTo) => changeAirline(airlineFrom, airlineTo) ;
-		case RemoveAirline(airline) => removeAirline(airline);
-
-		//SEATTYPE
-		case AddSeatType(seatType) => addSeatType(seatType);
-		case RemoveSeatType(seatType) => removeSeatType(seatType);
-		case ChangeSeatType(from, to) => changeSeatType(from, to);
-
-		//DISTANCE
-		case AddDist(distance) => addDist(distance);
-
-		//FLIGHTTIME
-		case AddFlightTime(flightTime) => addFlightTime(flightTime);
-
-		//Flight
-		case AddFlight(flight) => addFlight(flight);
-		case AddFlight2(flight, prices) => addFlight2(flight, prices);
-		case ChangeFlight(flightFrom, flightTo) => changeFlight(flightFrom, flightTo);
-		case RemoveFlight(flight) => removeFlight(flight);
-
-		//Template
-		case AddTemplate(template, prices, periods) => addTemplate(template,prices,periods);
-		case AddTemplatePeriods(template,periods) => addTemplatePeriods(template,periods);
-
-		case AddSeats(airplaneType, seat_datas) => addSeats(airplaneType,seat_datas);
-		
-		//SEAT INSTANCES
-		case ChangeFlightSeatInstancesTo(flight,seatInstances_data) => changeFlightSeatInstancesTo(flight,seatInstances_data);
+	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
+			op match {
+				//CITY
+			case AddCity(data) => addCity(data);
+			case ChangeCity(city, to) => changeCity(city, to);
+			case RemoveCity(city) => removeCity(city);
+	
+			//AIRPORT
+			case AddAirport(airport) => addAirport(airport);
+			case ChangeAirport(airportFrom, airportTo) => changeAirport(airportFrom, airportTo);
+			case RemoveAirport(airport) => removeAirport(airport);
+	
+			//AIRPLANETYPE
+			case AddAirplaneType(airplaneType , arrangement) => addAirplaneType(airplaneType, arrangement);
+			case ChangeAirplaneType(airplaneTypeFrom, airplaneTypeTo) => changeAirplaneType(airplaneTypeFrom, airplaneTypeTo);
+			case RemoveAirplaneType(airplaneType) => removeAirplaneType(airplaneType);
+	
+			//AIRLINE
+			case AddAirline(airline) => addAirline(airline);
+			case ChangeAirline(airlineFrom, airlineTo) => changeAirline(airlineFrom, airlineTo) ;
+			case RemoveAirline(airline) => removeAirline(airline);
+	
+			//SEATTYPE
+			case AddSeatType(seatType) => addSeatType(seatType);
+			case RemoveSeatType(seatType) => removeSeatType(seatType);
+			case ChangeSeatType(from, to) => changeSeatType(from, to);
+	
+			//DISTANCE
+			case AddDist(distance) => addDist(distance);
+	
+			//FLIGHTTIME
+			case AddFlightTime(flightTime) => addFlightTime(flightTime);
+	
+			//Flight
+			case AddFlight(flight) => addFlight(flight);
+			case AddFlight2(flight, prices) => addFlight2(flight, prices);
+			case ChangeFlight(flightFrom, flightTo) => changeFlight(flightFrom, flightTo);
+			case RemoveFlight(flight) => removeFlight(flight);
+	
+			//Template
+			case AddTemplate(template, prices, periods) => addTemplate(template,prices,periods);
+			case AddTemplatePeriods(template,periods) => addTemplatePeriods(template,periods);
+			case ChangeTemplate(template, change) => changeTemplate(template,change);
+			case AddSeats(airplaneType, seat_datas) => addSeats(airplaneType,seat_datas);
+			
+			//SEAT INSTANCES
+			case ChangeFlightSeatInstancesTo(flight,seatInstances_data) => changeFlightSeatInstancesTo(flight,seatInstances_data);
+			case ChangeTemplateSeatInstancesTo(template,seatInstances_data) => changeTemplateSeatInstancesTo(template,seatInstances_data);
+			}
 		}
 	}
 
@@ -467,6 +471,123 @@ object Handler {
 				extractSeatNumbers(seat, template.airplaneType).foreach(seatNb => (Q.u + "insert into seatinstancetemplate(`idAirline`,`idTemplate`,`seatnumber`,`idAirplanetype`,`price`) values ('" + airlineId + "','" + (templateId+"") + "','" + (seatNb+"") + "','" + (typeId+"") + "','" + (priceVal+"") +"')").execute)
 			}
 		}
+	}
+	
+	def commafy(columns : List[String], values: List[String]) : String = {
+	  if (columns.size != values.size)
+	    throw new IllegalArgumentException;
+	  commafy((columns,values).zipped.map((a,b) => "`"+a+"` = '" + b +"'"));
+	}
+	
+//	def orify(columns : List[String], values: List[String]) : String = {
+//	  if (columns.size != values.size)
+//	    throw new IllegalArgumentException;
+//	  orify((columns,values).zipped.map((a,b) => "`"+a+"` = '" + b +"'"));
+//	}
+	
+	def orify(list : List[String]) : String = {
+	  		val sb : StringBuilder = new StringBuilder;
+		if (list.size < 1) {
+		  return "";
+		}
+		var listi = list;
+	  	while(list.size > 1) {
+	  	  sb.append(list.head.toString)
+	  	  sb.append(" OR ")
+	  	  listi = listi.tail;
+	  	}
+	  	return sb.toString;
+	}
+	
+	def commafy(list : List[String]) : String = {
+		val sb : StringBuilder = new StringBuilder;
+		if (list.size < 1) {
+		  return "";
+		}
+		var listi = list;
+	  	while(list.size > 1) {
+	  	  sb.append(list.head.toString)
+	  	  sb.append(", ")
+	  	  listi = listi.tail;
+	  	}
+	  	return sb.toString;
+	}
+	
+	def changeTemplate(template:Template, change:Template_change) = {
+	  val templateIds : List[handling.TemplateId] = getTemplateIds(template);
+	  val nrTemplateIds = templateIds.size;
+	  var airplaneTypeChange = false;
+	  if (nrTemplateIds >= 1) {
+		  var columns = List[String]();
+		  var values = List[String]();
+		  change match {
+		    case Template_change(Filled(fln),_,_,_) => 
+		      if (nrTemplateIds > 1)
+		        throw new NonUniqueTemplateException();
+		      val templateIdsChange = getTemplateIdFromFLN(fln);
+		      if (templateIdsChange.size > 1)
+		        throw new NonUniqueTemplateException();
+		      if (templateIdsChange.size < 1)
+		        throw new NoSuchTemplateException();
+		      columns = "idTemplate" :: columns
+		      values = templateIds.head.idTemplate.toString :: values
+		      columns = "idAirline" :: columns
+		      values = templateIds.head.idAirline.toString :: values
+		    case _ =>
+		  }
+		  change match {
+		    case Template_change(_,Filled(from),_,_) => 
+		      val fromIds = getAirportIds(from);
+		      if (fromIds.size > 1)
+		        throw new NonUniqueFromAirport();
+		      if (fromIds.size < 1)
+		        throw new NoSuchFromAirport();
+		      columns = "idAirportFrom" :: columns;
+		      values = fromIds.head.toString :: values;
+		    case _ => // do nothing
+		  }
+		  change match {
+		    case Template_change(_,_,Filled(to),_) => ;
+		      val toIds = getAirportIds(to);
+		      if (toIds.size > 1)
+		        throw new NonUniqueToAirport();
+		      if (toIds.size < 1)
+		        throw new NoSuchFromAirport();
+		      columns = "idAirportTo" :: columns;
+		      values = toIds.head.toString :: values;
+		    case _ => // do nothing
+	      }
+		  change match {
+		    case Template_change(_,_,_,Filled(airplaneType)) => 
+		      val atIds = getAirplaneTypeIds(airplaneType);
+		      if (atIds.size > 1)
+		        throw new NonUniqueAirplaneTypeException();
+		      if (atIds.size < 1)
+		        throw new NoSuchAirplaneTypeException();
+		      columns = "idAirplaneType" :: columns;
+		      values = atIds.head.toString :: values;
+		      airplaneTypeChange = true;
+		    case _ => // do nothing
+		  }
+		  //Update all the templates that are matched with the values that
+		  //are filled in.
+		  val sqlQuery = 
+		    "UPDATE TEMPLATE SET " +
+		    	commafy(columns,values) +
+	    		" WHERE (" +
+				  orify(templateIds.map(t => 
+				    "("+
+				    	"`idAirline`= '" + t.idAirline + "'"+
+				    	" AND "+
+				    	"`idTemplate` = '" + t.idTemplate + "'"+
+			    	")")) +
+		    	")";
+		  execute(sqlQuery);
+		  //Update the prices of the seat instances in case of changed airplane type
+		  if (airplaneTypeChange)
+		    templateIds.foreach(t => 
+		      execute("CALL update_seat_instance_templates("+t.idAirline + "," + t.idTemplate + ")"));
+	  }
 	}
 
   def isExpectedAmount(seat:SeatInstance_data, amount:Int) : Boolean = {
@@ -918,39 +1039,141 @@ object Handler {
 	}
 	
 	def changeFlightSeatInstances(flight: Flight, seatInstances: SeatNumberInstances_data) {
+	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
 	  val price = seatInstances.price;
 	  val flightNumbers = getFlightIds(flight);	  
 	  val firstSeatNumber = seatInstances.number;
 	  var lastSeatNumber = getLastSeatNumber(seatInstances);
+	  val priceString = priceToDouble(price) + "";
 	  for (flightId <- flightNumbers) {
 	    val seatNumberIdAirplaneTypeQuery = "SELECT seatNumber,idAirplaneType FROM actualseatinstances WHERE idFlight='" + flightId + "'";
 	    val seatNumberIdAirplaneTypes = getSeatNumberIdAirplaneTypes(seatNumberIdAirplaneTypeQuery);
+	    var count = 0;
 	    for (e <- seatNumberIdAirplaneTypes) {
-	      if (!(e.seatNb >= firstSeatNumber && e.seatNb <= lastSeatNumber)) {
-	        throw new SeatNumberOutOfRangeException();
+	      if (e.seatNb >= firstSeatNumber && e.seatNb <= lastSeatNumber) {
+	        count = count + 1;
 	      }
 	    }
-	    for (e <- seatNumberIdAirplaneTypes) {
-	    	val query = "INSERT INTO seatinstance(`idFlight`,`seatNumber`,`idAirplaneType`,`price`) VALUES('" + (flightId+"") + "','" + (e.seatNb+"") + "','" + (e.idAirplaneType+"") + "','" + price + "' " + "ON DUPLICATE KEY UPDATE price=" + price;
-	    	execute(query);
+	    if (count != ((lastSeatNumber - firstSeatNumber) + 1)) {
+	      throw new SeatNumberOutOfRangeException();
 	    }
+	    for (e <- seatNumberIdAirplaneTypes) {
+	      if (e.seatNb >= firstSeatNumber && e.seatNb <= lastSeatNumber) {
+	    	val query = "INSERT INTO seatinstance(`idFlight`,`seatNumber`,`idAirplaneType`,`price`) VALUES('" + (flightId+"") + "','" + (e.seatNb+"") + "','" + (e.idAirplaneType+"") + "','" + priceString + "') " + "ON DUPLICATE KEY UPDATE price=" + priceString;
+	    	//println(query);
+	    	execute(query);
+	      }
+	    }
+	  }
 	  }
 	}
 	
 	def changeFlightSeatInstances(flight: Flight, seatInstances: SeatTypeInstances_data) {
+	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
 	  val price = seatInstances.price;
 	  val flightNumbers = getFlightIds(flight);
 	  val seatType = seatInstances.seatType;
 	  if (count(select("Count(*)","SeatType","name='" + seatType + "'")) < 1) {
 	    throw new NoSuchSeatTypeException();
 	  }
+	  val priceString = priceToDouble(price) + "";
 	  for (flightId <- flightNumbers) {
-	    val seatNumberIdAirplaneTypeQuery = "SELECT seatNumber,idAirplaneType FROM actualseatinstances WHERE idFlight='" + flightId + "' AND idSeatType='" + (seatType+"") + "'";
+	    val seatNumberIdAirplaneTypeQuery = "SELECT seatNumber,idAirplaneType FROM actualseatinstances WHERE idFlight='" + flightId + "' AND seatTypeName='" + (seatType+"") + "'";
+	    //println(seatNumberIdAirplaneTypeQuery);
 	    val seatNumberIdAirplaneTypes = getSeatNumberIdAirplaneTypes(seatNumberIdAirplaneTypeQuery);
+	    //println(seatNumberIdAirplaneTypes.size);
 	    for (e <- seatNumberIdAirplaneTypes) {
-	      val query = "INSERT INTO seatinstance(`idFlight`,`seatNumber`,`idAirplaneType`,`price`) VALUES('" + (flightId+"") + "','" + (e.seatNb+"") + "','" + (e.idAirplaneType+"") + "','" + price + "' " + "ON DUPLICATE KEY UPDATE price=" + price;
+	      val query = "INSERT INTO seatinstance(`idFlight`,`seatNumber`,`idAirplaneType`,`price`) VALUES('" + (flightId+"") + "','" + (e.seatNb+"") + "','" + (e.idAirplaneType+"") + "','" + priceString + "') " + "ON DUPLICATE KEY UPDATE price=" + priceString;
+	      //println(query);
 	      execute(query);
 	    }
+	  }
+	  }
+	}
+	
+	def priceToDouble(price: syntax.Price) : Double = {
+	  var result = 0d;
+	  price match {
+	  	case Dollar(Filled(dollar), Filled(cent)) => result = dollar + cent/100;
+	  	case Dollar(Empty(), Filled(cent)) => result = cent/100;
+	  	case Dollar(Filled(dollar), Empty()) => result = dollar;
+	  	case Euro(Filled(euro), Empty()) => result = toDollar(euro);
+	  	case Euro(Empty(), Filled(cent)) => result = toDollar(cent/100);
+	  	case Euro(Filled(euro), Filled(cent)) => result = toDollar(euro + cent/100);
+	  	case _ =>
+	  }
+	  return result;
+	}
+	
+	def changeTemplateSeatInstancesTo(template: Template,seatInstances: List[SeatInstance_data]) {
+	  if (hasOverlappingSeatNumbers(seatInstances)) {
+	    throw new OverlappingSeatInstancesException();
+	  }
+	  if (hasSameSeatTypes(seatInstances)) {
+	    throw new SameSeatTypesException();
+	  }
+	  for (s <- seatInstances) {
+	    s match {
+	      case SeatNumberInstances_data(n,amt,p) => changeTemplateSeatInstances(template,SeatNumberInstances_data(n,amt,p))
+	      case SeatTypeInstances_data(t,p) => changeTemplateSeatInstances(template,SeatTypeInstances_data(t,p))
+	    }
+	  }
+	}
+	
+	def changeTemplateSeatInstances(template: Template,seatInstances: SeatNumberInstances_data) {
+	   Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
+	  val price = seatInstances.price;
+	  val templateIds = getTemplateIds(template);
+	  val firstSeatNumber = seatInstances.number;
+	  var lastSeatNumber = getLastSeatNumber(seatInstances);
+	  val priceString = priceToDouble(price) + "";
+	  for (templateId <- templateIds) {
+	    val seatNumberIdAirplaneTypeQuery = "SELECT seatNumber,idAirplaneType FROM actualseatinstances WHERE idTemplate='" + (templateId.idTemplate+"") + "'";
+	    val seatNumberIdAirplaneTypes = getSeatNumberIdAirplaneTypes(seatNumberIdAirplaneTypeQuery);
+	    var count = 0;
+	    for (e <- seatNumberIdAirplaneTypes) {
+	      if (e.seatNb >= firstSeatNumber && e.seatNb <= lastSeatNumber) {
+	        count = count + 1;
+	      }
+	    }
+	    if (count != ((lastSeatNumber - firstSeatNumber) + 1)) {
+	      throw new SeatNumberOutOfRangeException();
+	    }
+	    for (e <- seatNumberIdAirplaneTypes) {
+	      if (e.seatNb >= firstSeatNumber && e.seatNb <= lastSeatNumber) {
+	    	val query = "INSERT INTO seatinstance(`idFlight`,`seatNumber`,`idAirplaneType`,`price`) VALUES('" + (templateId.idTemplate+"") + "','" + (e.seatNb+"") + "','" + (e.idAirplaneType+"") + "','" + priceString + "') " + "ON DUPLICATE KEY UPDATE price=" + priceString;
+	    	//println(query);
+	    	execute(query);
+	      }
+	    }
+	  }	  
+	}
+	}
+	
+	def changeTemplateSeatInstances(template: Template, seatInstances: SeatTypeInstances_data) {
+	  Database.forURL("jdbc:mysql://localhost/mydb?user=root&password=",
+				driver = "com.mysql.jdbc.Driver") withSession {
+	  val price = seatInstances.price;
+	  val templateIds = getTemplateIds(template);
+	  val seatType = seatInstances.seatType;
+	  if (count(select("Count(*)","SeatType","name='" + seatType + "'")) < 1) {
+	    throw new NoSuchSeatTypeException();
+	  }
+	  val priceString = priceToDouble(price) + "";
+	  for (templateId <- templateIds) {
+	    val seatNumberIdAirplaneTypeQuery = "SELECT seatNumber,idAirplaneType FROM actualseatinstances WHERE idFlight='" + templateId.idTemplate + "' AND seatTypeName='" + (seatType+"") + "'";
+	    //println(seatNumberIdAirplaneTypeQuery);
+	    val seatNumberIdAirplaneTypes = getSeatNumberIdAirplaneTypes(seatNumberIdAirplaneTypeQuery);
+	    //println(seatNumberIdAirplaneTypes.size);
+	    for (e <- seatNumberIdAirplaneTypes) {
+	      val query = "INSERT INTO seatinstance(`idFlight`,`seatNumber`,`idAirplaneType`,`price`) VALUES('" + (templateId.idTemplate+"") + "','" + (e.seatNb+"") + "','" + (e.idAirplaneType+"") + "','" + priceString + "') " + "ON DUPLICATE KEY UPDATE price=" + priceString;
+	      //println(query);
+	      execute(query);
+	    }
+	  }
 	  }
 	}
 	
