@@ -20,6 +20,7 @@ case class NoSuchAirportCode(arg:String) extends Exception
 case class NotAllowedAirportName(arg:String) extends Exception
 case class NotAllowedAirportCode(arg:String) extends Exception
 //case class NotAllowedAirportCode(arg:String) extends Exception
+case class IllegalAirportShortException(arg:String) extends Exception
 
 //AIRPLANETYPE
 case class IllegalAirplaneTypeNameException(name:String) extends Exception

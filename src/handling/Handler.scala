@@ -195,6 +195,9 @@ object Handler {
 			if (!airport.name.matches("[a-zA-Z0-9\\s]+"))
 				throw new IllegalAirportNameException(airport.name);
 
+      if(!airport.short.matches("[A-Z]{3}"))
+        throw new IllegalAirportShortException(airport.short);
+
 			if (!hasUniqueResult(select("count(*)", "city", "name='" + cityName + "'")))
 				throw new NoSuchCityException(cityName);
 
@@ -1222,13 +1225,15 @@ object Handler {
 			return arrivalTime
 	}
 
-	def extractAirplaneTypes(flight:Flight_data) : List[Int] = {
+	def extractAirplaneTypes(flight:Flight_data, template:Template) : List[Int] = {
 			var airplaneTypes = List[Int]();
 			flight match {
 			case Flight_data(_,_,_,Filled(airplaneTypeVal)) => airplaneTypes = getAirplaneTypeIds(airplaneTypeVal);
-			case _ => 
+			case _ =>
+        var templateId = getTemplateIds(template).head;
+        airplaneTypes = getIds("select idAirplaneType from template where idAirline='" + templateId.idAirline + "' and idTemplate='" + template.idTemplate + "'") ;
 			}
-			return airplaneTypes
+			return airplaneTypes;
 	}
 
 	def getDateTime(dateTime: DateTime) : String = {
@@ -1240,26 +1245,36 @@ object Handler {
 			return getDateString(dateTime.date) + " " + time;
 	}
 
-	def addFlight2(Flight:Flight_data, prices: List[SeatInstance_data]) {
+	def addFlight2(flight:Flight_data, prices: List[SeatInstance_data]) {
 
 		if(!areUniqueSeatTypes(prices))
 			throw new NonUniqueSeatTypeException();
 
 		if(!areExistingSeatTypes(prices))
 			throw new NoSuchSeatTypeException();
-		//TODO
-		//		extractAirplaneTypes(flight);
-		//		
-		//		if(!areCorrespondingSeats(prices, ))
-		//			throw new NoCorrespondingSeatsException();
-		//		
-		//		addFlight(flight);
-		//		
-		//		
-		//		for (seat <- prices) {
-		//			var priceVal = extractPrice(seat);
-		//			extractSeatNumbers(seat, template.airplaneType).foreach(seatNb => (Q.u + "insert into seatinstance(`seatnumber`,`idAirplanetype`,`price`) values ('" + airlineId + "','" + (templateId+"") + "','" + (seatNb+"") + "','" + (typeId+"") + "','" + (priceVal+"") +"')").execute)
-		//		}
+
+    if(getTemplateIds(flight.template).size > 1)
+      throw new NonUniqueTemplateException();
+
+    if(getTemplateIds(flight.template).size == 0)
+      throw new NoSuchTemplateException();
+
+		val airplaneTypes = extractAirplaneTypes(flight);
+
+    if(airplaneTypes.size > 1)
+      throw new NonUniqueAirplaneTypeException();
+    if(airplaneTypes.size == 0)
+      throw new NoSuchAirplaneTypeException();
+
+		if(!areCorrespondingSeats(prices, airplaneTypes.head))
+			throw new NoCorrespondingSeatsException();
+
+		addFlight(flight);
+
+		for (seat <- prices) {
+				val priceVal = extractPrice(seat);
+				extractSeatNumbers(seat, template.airplaneType).foreach(seatNb => (Q.u + "insert into seatinstance(`seatnumber`,`idAirplanetype`,`price`) values ('" (seatNb+"") + "','" + (airplaneTypes.head+"") + "','" + (priceVal+"") +"')").execute)
+		}
 	}
 
 	def changeFlight(flightSelector:Flight, changeFlight:Flight_change) {
