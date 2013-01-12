@@ -3,3 +3,8 @@ bin/
 *.cache
 *.class
 *~
+beta/*
+target/*
+out/*
+*.jar
+*.xml
