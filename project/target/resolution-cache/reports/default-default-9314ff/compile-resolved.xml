@@ -9,7 +9,7 @@
 		extra-scalaVersion="2.9.2"
 		conf="compile"
 		confs="compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom"
-		date="20130112071725"/>
+		date="20130112083552"/>
 	<dependencies>
 		<module organisation="com.github.retronym" name="sbt-onejar">
 			<revision name="0.8" status="release" pubdate="20120702232236" resolver="sbt-plugin-releases" artresolver="sbt-plugin-releases" extra-sbtVersion="0.12" extra-scalaVersion="2.9.2" downloaded="false" searched="false" default="false" conf="default(compile), compile" position="0">
