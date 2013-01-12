@@ -12,6 +12,7 @@ import syntax.DateTime
 import syntax.Seat_data
 import syntax.Template_data
 import syntax.Airport
+import syntax.Flight_data
 
 //CITY
 case class IllegalCityNameException(name:String) extends Exception
@@ -42,6 +43,8 @@ case class IllegalAirportShortException(arg:String) extends Exception
 //AIRPLANETYPE
 case class IllegalAirplaneTypeNameException(name:String) extends Exception
 case class AlreadyExistingAirplaneTypeException(name:String) extends Exception
+case class NonUniqueAirplaneTypeFlightException(flight: Flight_data) extends Exception
+case class NoSuchAirplaneTypeFlightException(flight: Flight_data) extends Exception
 
 //AIRLINE
 case class IllegalAirlineNameException(name:String) extends Exception

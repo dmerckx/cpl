@@ -1254,20 +1254,20 @@ object Handler {
 			throw new NoSuchSeatTypeException(prices);
 
     if(getTemplateIds(flight.template).size > 1)
-      throw new NonUniqueTemplateException();
+      throw new NonUniqueTemplateException(flight.template);
 
     if(getTemplateIds(flight.template).size == 0)
-      throw new NoSuchTemplateException();
+      throw new NoSuchTemplateException(flight.template);
 
 		val airplaneTypes = extractAirplaneTypes(flight);
 
     if(airplaneTypes.size > 1)
-      throw new NonUniqueAirplaneTypeException();
+      throw new NonUniqueAirplaneTypeFlightException(flight);
     if(airplaneTypes.size == 0)
-      throw new NoSuchAirplaneTypeException();
+      throw new NoSuchAirplaneTypeFlightException(flight);
 
 		if(!areCorrespondingSeats(prices, airplaneTypes.head))
-			throw new NoCorrespondingSeatsException();
+			throw new NoCorrespondingSeatsException(prices,airplaneTypes.head);
 
 		addFlight(flight);
 
