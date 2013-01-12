@@ -99,7 +99,7 @@ object Parser extends StandardTokenParsers {
   
   lexical.delimiters += ("{", "}", ",", ":", "[", "]")
   lexical.reserved += ("ADD", "CHANGE", "REMOVE", "TO", "FROM", "WITH", "INSTANCES", "AND",  
-		  				"CITY", "AIRPORT", "AIRPLANE", "TIME", "TYPE", "DISTANCE", "SEAT", "SEATS", "PERIOD", "PERIODS", "TEMPLATE", "FLIGHT")
+		  				"CITY", "AIRPORT", "AIRPLANE", "AIRLINE", "TIME", "TYPE", "DISTANCE", "SEAT", "SEATS", "PERIOD", "PERIODS", "TEMPLATE", "FLIGHT")
   
   // ----- ALL THE ACTUAL OPERATORS ----- //
     
@@ -127,7 +127,6 @@ object Parser extends StandardTokenParsers {
     	//Seat
     "ADD" ~> "SEAT" ~> seatData ~ "TO" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ^^ {case s~_~_~_~a => AddSeats(a,List(s))} |
     "ADD" ~> "SEATS" ~> typeList(seatData) ~ "TO" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ^^ {case s~"OF"~_~_~a => AddSeats(a,s)} |
-    "CHANGE" ~> "SEAT" ~> "OF" ~> "AIRPLANE" ~> "TYPE" ~> airplaneType ~ "TO" ~ seatChange ^^ {case a~_~s => ChangeSeatsTo(a,List(s))} |
     "CHANGE" ~> "SEATS" ~> "OF" ~> "AIRPLANE" ~> "TYPE" ~> airplaneType ~ "TO" ~ typeList(seatChange) ^^ {case a~_~s => ChangeSeatsTo(a,s)} |
     "REMOVE" ~> "SEAT" ~> seatRemove ~ "FROM" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ^^ {case s~"FROM"~"AIRPLANE"~"TYPE"~a => RemoveSeats(a, List(s))} |
     "REMOVE" ~> "SEATS" ~> typeList(seatRemove) ~ "FROM" ~ "AIRPLANE" ~ "TYPE" ~ airplaneType ^^ {case s~"FROM"~"AIRPLANE"~"TYPE"~a => RemoveSeats(a, s)} |
@@ -303,7 +302,8 @@ object Parser extends StandardTokenParsers {
    val periodDataAtts = fromToAtts | parseStr("weekday") | parseType("departure", time)
    val periodAtts = parseType("contained", containedPeriod) | periodDataAtts
    val period = parseAtts(periodAtts) ^^
-     {as => Period(selOpt[ContainedPeriod]("contained", as), selOpt[Date]("from", as), selOpt[Date]("to", as), selOpt[String]("weekday", as), selOpt[Time]("departure", as))}
+     {as => Period(
+         selOpt[ContainedPeriod]("contained", as), selOpt[Date]("from", as), selOpt[Date]("to", as), selOpt[String]("weekday", as), selOpt[Time]("departure", as))}
    val periodData = parseAtts(periodAtts) ^^
      {as => Period_data(selOpt[Date]("from", as), selOpt[Date]("to", as), selOpt[String]("weekday", as), sel[Time]("departure", as))}
   
