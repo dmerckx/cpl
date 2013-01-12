@@ -12,8 +12,6 @@ case class SkippedAttribute(name:String) extends Exception
 case class TooLittleAttributes() extends Exception
 case class DoubleAttribute() extends Exception
 
-//TODO: use custom Lexical instead of StdLexical (remove 'comments functionality' etc)
-//TODO: remove prints
 object Parser extends StandardTokenParsers {
   type ParserType[T] = Parser[T];
   type Att = Parser[(String,Any)]
@@ -42,7 +40,6 @@ object Parser extends StandardTokenParsers {
    * Select a value from a map. Throws an error if the value could not be found.
    */
   def sel[T](key:String, map:Map[String,Any]):T = {
-    if(print) println(" -- select " + key + " from " + map);
     if(map.contains(key))
       map.get(key).get match {case t:T => t}
     else
@@ -53,7 +50,6 @@ object Parser extends StandardTokenParsers {
    * Select an optional value from a map.
    */
   def selOpt[T](key:String, map:Map[String,Any]):Opt[T] = {
-    if(print) println(" -- selectopt " + key + " from " + map);
     if(map.contains(key))
       map.get(key).get match {case s:T => Filled(s)}
     else
@@ -66,7 +62,6 @@ object Parser extends StandardTokenParsers {
   def parseType[T <: Type](attName:String, typeParser:Parser[T]):Parser[(String, T)] = {
     ident ~ ":" ~ typeParser ^? {
     case att~":"~typ if att==attName => 
-      if(print) println(" -- parser type -> "+ att +" vs " +attName  + ": " + typ);
       (attName, typ)}
   }
   
@@ -79,8 +74,7 @@ object Parser extends StandardTokenParsers {
     
   def parseStr(attName:String):Parser[(String, String)] =
     ident ~ ":" ~ (ident | stringLit) ^?
-    {case att~":"~str if att==attName => if(print) println(" --" + attName + " :" + str);
-    						(attName, str)}
+    {case att~":"~str if att==attName => (attName, str)}
     
   def parseInt(attName:String):Parser[(String, Int)] =
     ident ~ ":" ~ numericLit ^? {
@@ -233,9 +227,7 @@ object Parser extends StandardTokenParsers {
     parseAtts(airplaneTypeAtts) ^^ {as => AirplaneType(selOpt[String]("name",as))}
   val airplaneTypeData =
     parseAtts(airplaneTypeAtts) ^^ {
-	  as => 
-	  println("AIRPLANE TYPE: "  + as);
-	  AirplaneType_data(sel[String]("name",as))}
+	  as =>  AirplaneType_data(sel[String]("name",as))}
   //Seats
   val seatChange1Atts = parseInt("number") | parseInt("amt") | parseStr("typeChange")
   val seatChange2Atts = parseStr("typeSelect") | parseStr("typeChange")
@@ -258,7 +250,8 @@ object Parser extends StandardTokenParsers {
     parseType("type", airplaneType) |
     parseType("time", time)
   val flightTime =
-    parseAtts(flightTimeAtts) ^^ {as => FlightTime(selOpt[Airport]("from",as), selOpt[Airport]("to", as),
+    parseAtts(flightTimeAtts) ^^ {as =>
+      FlightTime(selOpt[Airport]("from",as), selOpt[Airport]("to", as),
     									selOpt[AirplaneType]("type", as), selOpt[Time]("time", as))}
   val flightTimeData =
     parseAtts(flightTimeAtts) ^^ {as => FlightTime_data(sel[Airport]("from",as), sel[Airport]("to", as),
@@ -268,20 +261,16 @@ object Parser extends StandardTokenParsers {
     parseStr("name") |
     parseStr("short")
   val airline =
-    parseAtts(airlineAtts) ^^ {as => Airline(selOpt[String]("short", as), selOpt[String]("name", as))}
+    parseAtts(airlineAtts) ^^ {as => Airline(selOpt[String]("name", as), selOpt[String]("short", as))}
   val airlineData =
-    parseAtts(airlineAtts) ^^ {as => Airline_data(sel[String]("short", as), sel[String]("name",as))}
+    parseAtts(airlineAtts) ^^ {as => Airline_data(sel[String]("name", as), sel[String]("short",as))}
   
   //Template
-  val templateAtts =
-    parseStr("fln") |
-    parseType("type", airplaneType) |
-    parseType("from", airport) |
-    parseType("to", airport)
-  val templateSelectAtts =
-    parseType("airline", airline)
+  val templateAtts = parseStr("fln") | parseType("type", airplaneType) | parseType("from", airport) | parseType("to", airport)
+  val templateSelectAtts = templateAtts | parseType("airline", airline)
   val template = parseAtts(templateSelectAtts) ^^
-  	{as => Template(selOpt[Airline]("airline", as), selOpt[String]("fln", as), selOpt[Airport]("from", as), selOpt[Airport]("to", as), selOpt[AirplaneType]("type", as))}
+  	{as =>
+       Template(selOpt[Airline]("airline", as), selOpt[String]("fln", as), selOpt[Airport]("from", as), selOpt[Airport]("to", as), selOpt[AirplaneType]("type", as))}
   val templateChange = parseAtts(templateAtts) ^^
 	{as => Template_change(selOpt[String]("fln", as), selOpt[Airport]("from", as), selOpt[Airport]("to", as), selOpt[AirplaneType]("type", as))}
   val templateData = parseAtts(templateAtts) ^^
@@ -312,19 +301,15 @@ object Parser extends StandardTokenParsers {
   
    //Flights
    val flightChangeAtts =
-     parseType("departure", dateTime) |
-     parseType("arrival", dateTime) |
-     parseType("type", airplaneType)
+     parseType("departure", dateTime) | parseType("arrival", dateTime) | parseType("type", airplaneType)
    val flightDataAtts = 
-     parseType("template", template) |
-     parseType("departure", dateTime) |
-     parseType("arrival", dateTime) |
-     parseType("type", airplaneType)
+     parseType("template", template) | parseType("departure", dateTime) | parseType("arrival", dateTime) | parseType("type", airplaneType)
    val flightAtts =
-     flightDataAtts |
-     parseType("duringInterval", timePeriod)
+     flightDataAtts | parseType("duringInterval", timePeriod)
    val flight: Parser[Flight] =
-     parseAtts(flightAtts) ^? {case as => Flight1(selOpt[Template]("template", as), sel[DateTime]("departure", as),
+     parseAtts(flightAtts) ^? {
+     	case as =>
+     	  Flight1(selOpt[Template]("template", as), sel[DateTime]("departure", as),
          selOpt[DateTime]("arrival", as), selOpt[AirplaneType]("type", as), selOpt[TimePeriod]("duringInterval", as))} | 
      parseAtts(flightAtts) ^? {case as => Flight2(selOpt[Template]("template", as), selOpt[DateTime]("departure", as),
          sel[DateTime]("arrival", as), selOpt[AirplaneType]("type", as), selOpt[TimePeriod]("duringInterval", as))} |
@@ -333,7 +318,8 @@ object Parser extends StandardTokenParsers {
    val flightChange =
      parseAtts(flightChangeAtts) ^^ {as => Flight_change(selOpt[DateTime]("departure", as), selOpt[DateTime]("arrival", as), selOpt[AirplaneType]("type", as))}
    val flightData =
-     parseAtts(flightDataAtts) ^^ {as => Flight_data(sel[Template]("template", as), sel[DateTime]("departure", as),
+     parseAtts(flightDataAtts) ^^ {as =>
+       Flight_data(sel[Template]("template", as), sel[DateTime]("departure", as),
          selOpt[DateTime]("arrival", as), selOpt[AirplaneType]("type", as))}
      
   
