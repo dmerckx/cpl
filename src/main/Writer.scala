@@ -1,13 +1,85 @@
 package main
 import handling.exceptions._
 import syntax.Operation
+import syntax._
 
 
 object Writer {
 	def successWriter(operation: Operation): String = {
 		var success = "";
 		operation match {
-			case _ => success = "Sucessfully executed operation.\n" + indent(operation.toString);
+			case AddCity(data) => 
+				success = "City added succesfully"
+			case ChangeCity(city, to) => 
+				success = "The city changes were made succesfully"
+			case RemoveCity(city) => 
+				success = "City removed succesfully"
+	
+			//AIRPORT
+			case AddAirport(airport) =>
+				success = "Airport added succesfully"
+			case ChangeAirport(airportFrom, airportTo) =>
+				success = "The airport changes were made succesfully"
+			case RemoveAirport(airport) => 
+				success = "Airport removed succesfully"
+	
+			//AIRPLANETYPE
+			case AddAirplaneType(airplaneType , arrangement) =>
+				success = "Airplane type and its seat configuration added succesfully"
+			case ChangeAirplaneType(airplaneTypeFrom, airplaneTypeTo) =>
+				success = "Airplane type changes were made succesfully"
+			case RemoveAirplaneType(airplaneType) =>
+				success= "Airplane type removed succesfully"
+	
+			//AIRLINE
+			case AddAirline(airline) => 
+				success = "Airline added succesfully"
+			case ChangeAirline(airlineFrom, airlineTo) =>
+				success = "Airline changes were made succesfully"
+			case RemoveAirline(airline) => 
+				success = "Airline removed succesfully"
+	
+			//SEATTYPE
+			case AddSeatType(seatType) => 
+				success = "Seat type added succesfully"
+			case RemoveSeatType(seatType) =>
+				success = "Seat type removed succesfully"
+			case ChangeSeatType(from, to) =>
+				success = "Seat type changes were made succesfully"
+	
+			//DISTANCE
+			case AddDist(distance) => 
+				success = "Distance added succesfully"
+	
+			//FLIGHTTIME
+			case AddFlightTime(flightTime) =>
+				success = "Flighttime added succesfully"
+	
+			//Flight
+			case AddFlight(flight) => 
+				success = "Flight added succesfully"
+			case AddFlight2(flight, prices) =>
+				success = "Flight and pricing information added succesfully"
+			case ChangeFlight(flightFrom, flightTo) => 
+				success = "Flight changes were made succesfully"
+			case RemoveFlight(flight) => 
+				success = "Flight removed succesfully"
+	
+			//Template
+			case AddTemplate(template, prices, periods) =>
+				success = "Template with pricing and periods added succesfully"
+			case AddTemplatePeriods(template,periods) => 
+				success = "Template periods added succesfully"
+			case ChangeTemplate(template, change) => 
+				success = "Template changes were made succesfully"
+			case AddSeats(airplaneType, seat_datas) => 
+				success = "Airplane type with seats data added succesfully"
+			
+			//SEAT INSTANCES
+			case ChangeFlightSeatInstancesTo(flight,seatInstances_data) =>
+				success = "Seat instances changes to a flight were made succesfully"
+			case ChangeTemplateSeatInstancesTo(template,seatInstances_data) => 
+				success = "Seat instances changes to a template were made succesfully"
 		}
 		return success;
 	}
