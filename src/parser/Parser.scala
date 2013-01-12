@@ -268,9 +268,9 @@ object Parser extends StandardTokenParsers {
     parseStr("name") |
     parseStr("short")
   val airline =
-    parseAtts(airlineAtts) ^^ {as => Airline(selOpt[String]("name", as), selOpt[String]("short", as))}
+    parseAtts(airlineAtts) ^^ {as => Airline(selOpt[String]("short", as), selOpt[String]("name", as))}
   val airlineData =
-    parseAtts(airlineAtts) ^^ {as => Airline_data(sel[String]("name", as), sel[String]("short",as))}
+    parseAtts(airlineAtts) ^^ {as => Airline_data(sel[String]("short", as), sel[String]("name",as))}
   
   //Template
   val templateAtts =
