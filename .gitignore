@@ -6,3 +6,5 @@ bin/
 beta/*
 target/*
 out/*
+*.jar
+*.xml

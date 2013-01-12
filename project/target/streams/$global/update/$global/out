@@ -3372,7 +3372,7 @@
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-sbt#cache;0.12.1!cache.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-sbt#test-agent;0.12.1!test-agent.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-tools.testing#test-interface;0.5!test-interface.jar[0m
-[0m[[0mdebug[0m] [0m:: resolution report :: resolve 1416ms :: artifacts dl 40ms[0m
+[0m[[0mdebug[0m] [0m:: resolution report :: resolve 1432ms :: artifacts dl 40ms[0m
 [0m[[0mdebug[0m] [0mNbr of module to sort : 1[0m
 [0m[[0mdebug[0m] [0mSort dependencies of : com.github.retronym#sbt-onejar;0.8 / Number of dependencies = 2[0m
 [0m[[0mdebug[0m] [0mSort done for : com.github.retronym#sbt-onejar;0.8[0m
@@ -4112,5 +4112,5 @@
 [0m[[0mdebug[0m] [0m	report for default#default-9314ff;0.1-SNAPSHOT docs produced in C:\Users\Jonathan\workspace\cpl\cpl\project\target\resolution-cache\reports\default-default-9314ff\docs-resolved.xml[0m
 [0m[[0mdebug[0m] [0mNbr of module to sort : 0[0m
 [0m[[0mdebug[0m] [0m	report for default#default-9314ff;0.1-SNAPSHOT pom produced in C:\Users\Jonathan\workspace\cpl\cpl\project\target\resolution-cache\reports\default-default-9314ff\pom-resolved.xml[0m
-[0m[[0mdebug[0m] [0m	resolve done (1416ms resolve - 40ms download)[0m
+[0m[[0mdebug[0m] [0m	resolve done (1432ms resolve - 40ms download)[0m
 [0m[[0minfo[0m] [0mDone updating.[0m
